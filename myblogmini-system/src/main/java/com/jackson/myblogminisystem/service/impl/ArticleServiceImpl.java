@@ -49,9 +49,9 @@ public class ArticleServiceImpl implements ArticleService {
         Specification<Article> articleSpecification = (root, query, cb) -> {
             ArrayList<Predicate> predicateArrayList = new ArrayList<>();
             if (StringUtils.hasText(title)) {
-                Predicate predicate = cb.like(root.get("title"), title);
+                Predicate predicate = cb.like(root.get("title"), "%" + title + "%");
                 predicateArrayList.add(predicate);
-            }
+            }dd
             return cb.and(predicateArrayList.toArray(new Predicate[0]));
         };
         // 初始获取最近文章
