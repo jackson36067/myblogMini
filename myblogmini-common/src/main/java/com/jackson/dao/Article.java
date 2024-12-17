@@ -27,8 +27,6 @@ public class Article implements Serializable {
     private Integer totalLike;
     @Column(name = "total_visit")
     private Integer totalVisit;
-    @Column(name = "classify")
-    private  String classify;
     @Column(name = "create_time")
     @CreatedDate
     private LocalDateTime createTime;
@@ -39,23 +37,27 @@ public class Article implements Serializable {
     private String coverImage;
 
     @ManyToOne
+    @JoinColumn(name = "classify_id",referencedColumnName = "id")
+    private ArticleClassify articleClassify;
+
+    @ManyToOne
     @JoinColumn(name = "user_id",referencedColumnName = "id")
     private User user;
 
     public Article() {
     }
 
-    public Article(Long id, String title, String content, Integer totalComment, Integer totalLike, Integer totalVisit, String classify, LocalDateTime createTime, LocalDateTime updateTime, String coverImage, User user) {
+    public Article(Long id, String title, String content, Integer totalComment, Integer totalLike, Integer totalVisit, LocalDateTime createTime, LocalDateTime updateTime, String coverImage, User user,ArticleClassify articleClassify) {
         this.id = id;
         this.title = title;
         this.content = content;
         this.totalComment = totalComment;
         this.totalLike = totalLike;
         this.totalVisit = totalVisit;
-        this.classify = classify;
         this.createTime = createTime;
         this.updateTime = updateTime;
         this.coverImage = coverImage;
+        this.articleClassify = articleClassify;
         this.user = user;
     }
 
@@ -107,14 +109,6 @@ public class Article implements Serializable {
         this.totalVisit = totalVisit;
     }
 
-    public String getClassify() {
-        return classify;
-    }
-
-    public void setClassify(String classify) {
-        this.classify = classify;
-    }
-
     public LocalDateTime getCreateTime() {
         return createTime;
     }
@@ -147,17 +141,25 @@ public class Article implements Serializable {
         this.user = user;
     }
 
+    public ArticleClassify getArticleClassify() {
+        return articleClassify;
+    }
+
+    public void setArticleClassify(ArticleClassify articleClassify) {
+        this.articleClassify = articleClassify;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Article article = (Article) o;
-        return Objects.equals(id, article.id) && Objects.equals(title, article.title) && Objects.equals(content, article.content) && Objects.equals(totalComment, article.totalComment) && Objects.equals(totalLike, article.totalLike) && Objects.equals(totalVisit, article.totalVisit) && Objects.equals(classify, article.classify) && Objects.equals(createTime, article.createTime) && Objects.equals(updateTime, article.updateTime) && Objects.equals(coverImage, article.coverImage) && Objects.equals(user, article.user);
+        return Objects.equals(id, article.id) && Objects.equals(title, article.title) && Objects.equals(content, article.content) && Objects.equals(totalComment, article.totalComment) && Objects.equals(totalLike, article.totalLike) && Objects.equals(totalVisit, article.totalVisit) && Objects.equals(createTime, article.createTime) && Objects.equals(updateTime, article.updateTime) && Objects.equals(coverImage, article.coverImage) && Objects.equals(articleClassify, article.articleClassify) && Objects.equals(user, article.user);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, content, totalComment, totalLike, totalVisit, classify, createTime, updateTime, coverImage, user);
+        return Objects.hash(id, title, content, totalComment, totalLike, totalVisit, createTime, updateTime, coverImage, articleClassify, user);
     }
 
     @Override
@@ -169,10 +171,10 @@ public class Article implements Serializable {
                 ", totalComment=" + totalComment +
                 ", totalLike=" + totalLike +
                 ", totalVisit=" + totalVisit +
-                ", classify='" + classify + '\'' +
                 ", createTime=" + createTime +
                 ", updateTime=" + updateTime +
                 ", coverImage='" + coverImage + '\'' +
+                ", articleClassify=" + articleClassify +
                 ", user=" + user +
                 '}';
     }
