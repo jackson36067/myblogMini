@@ -5,11 +5,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.jackson.constant.JwtConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.User;
+import com.jackson.dto.UpdateUserDTO;
 import com.jackson.dto.UserLoginDTO;
 import com.jackson.myblogminisystem.repository.UserRepository;
 import com.jackson.myblogminisystem.service.UserService;
 import com.jackson.properties.WeChatProperties;
 import com.jackson.result.Result;
+import com.jackson.utils.AliOssUtils;
 import com.jackson.utils.HttpClientUtils;
 import com.jackson.utils.JwtUtils;
 import com.jackson.vo.LoginResultVO;
@@ -17,6 +19,8 @@ import com.jackson.vo.UserResult;
 import jakarta.annotation.Resource;
 import com.alibaba.fastjson.JSON;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,6 +35,8 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     @Resource
     private WeChatProperties weChatProperties;
+    @Resource
+    private AliOssUtils aliOssUtils;
 
     /**
      * 用户登录
@@ -60,6 +66,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 获取用户详情信息
+     *
      * @return
      */
     public Result<UserResult> getUserInfo() {
@@ -67,6 +74,38 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(currentId).get();
         UserResult userResult = BeanUtil.copyProperties(user, UserResult.class);
         return Result.success(userResult);
+    }
+
+    /**
+     * 上传头像至alioss
+     *
+     * @param image
+     * @return
+     */
+    @Override
+    public Result<String> uploadImage(MultipartFile image) {
+        String upload = aliOssUtils.upload(image);
+        return Result.success(upload);
+    }
+
+    /**
+     * 修改用户信息接口
+     *
+     * @param updateUserDTO
+     */
+    @Override
+    public void updateUserInfo(UpdateUserDTO updateUserDTO) {
+        Long currentId = BaseContext.getCurrentId();
+        User user = userRepository.findById(currentId).get();
+        String avatar = updateUserDTO.getAvatar();
+        if (StringUtils.hasText(avatar)) {
+            user.setAvatar(avatar);
+        }
+        String nickName = updateUserDTO.getNickName();
+        if (StringUtils.hasText(nickName)) {
+            user.setNickName(nickName);
+        }
+        userRepository.saveAndFlush(user);
     }
 
     /**
