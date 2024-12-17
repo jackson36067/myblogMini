@@ -84,19 +84,21 @@ public class ArticleServiceImpl implements ArticleService {
     public void doArticleLike(Long id) {
         // 获取用户id
         Long currentId = BaseContext.getCurrentId();
+        Article article = articleRepository.findById(id).get();
         // 判断是取消点赞还是点赞
         String key = RedisConstant.ARTICLE_LIKE_PREFIX + id;
         Boolean isLike = stringRedisTemplate.opsForSet().isMember(key, currentId.toString());
         if (Boolean.TRUE.equals(isLike)) {
             // 存在 -> 取消点赞,从当前key中删除该数据
             stringRedisTemplate.opsForSet().remove(key, currentId.toString());
+            // 减少一个点赞
+            article.setTotalLike(article.getTotalLike() - 1);
         } else {
             // 不存在 -> 点赞,将当前数据添加到key中
             stringRedisTemplate.opsForSet().add(key, currentId.toString());
+            // 添加一个点赞数量
+            article.setTotalLike(article.getTotalLike() + 1);
         }
-        // 添加一个点赞数量
-        Article article = articleRepository.findById(id).get();
-        article.setTotalLike(article.getTotalLike() + 1);
         articleRepository.saveAndFlush(article);
     }
 }
