@@ -51,7 +51,7 @@ public class ArticleServiceImpl implements ArticleService {
             if (StringUtils.hasText(title)) {
                 Predicate predicate = cb.like(root.get("title"), "%" + title + "%");
                 predicateArrayList.add(predicate);
-            }dd
+            }
             return cb.and(predicateArrayList.toArray(new Predicate[0]));
         };
         // 初始获取最近文章
