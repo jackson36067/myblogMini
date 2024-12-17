@@ -4,7 +4,9 @@ import cn.hutool.core.bean.BeanUtil;
 import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
+import com.jackson.dao.UserLikeArticle;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
+import com.jackson.myblogminisystem.repository.UserLikeArticleRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
 import com.jackson.myblogminisystem.service.ArticleService;
 import com.jackson.result.PageResult;
@@ -32,6 +34,8 @@ public class ArticleServiceImpl implements ArticleService {
     private UserRepository userRepository;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private UserLikeArticleRepository userLikeArticleRepository;
 
     /**
      * 分页获取文章
@@ -66,7 +70,7 @@ public class ArticleServiceImpl implements ArticleService {
                     ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
                     String nickName = userRepository.findNickNameById(article.getUser().getId());
                     articlePageVO.setAuthor(nickName);
-                    Boolean isMember = stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + article.getId(), currentId.toString());
+                    Boolean isMember = isMember(article.getId(), currentId);
                     articlePageVO.setIsLike(isMember);
                     return articlePageVO;
                 })
@@ -93,12 +97,70 @@ public class ArticleServiceImpl implements ArticleService {
             stringRedisTemplate.opsForSet().remove(key, currentId.toString());
             // 减少一个点赞
             article.setTotalLike(article.getTotalLike() - 1);
+            // 从用户点赞文章表中获取数据
+            UserLikeArticle byUserIdAndArticleId = userLikeArticleRepository.findByUserIdAndArticleId(currentId, id);
+            userLikeArticleRepository.delete(byUserIdAndArticleId);
         } else {
             // 不存在 -> 点赞,将当前数据添加到key中
             stringRedisTemplate.opsForSet().add(key, currentId.toString());
             // 添加一个点赞数量
             article.setTotalLike(article.getTotalLike() + 1);
+            userLikeArticleRepository.save(new UserLikeArticle(null, currentId, id));
         }
         articleRepository.saveAndFlush(article);
+    }
+
+    /**
+     * 获取用户点赞文章接口
+     *
+     * @return
+     */
+    @Override
+    public Result<List<ArticlePageVO>> getLikeArticle() {
+        Long currentId = BaseContext.getCurrentId();
+        List<UserLikeArticle> byUserId = userLikeArticleRepository.findAllByUserId(currentId);
+        List<ArticlePageVO> articlePageVOS = byUserId
+                .stream()
+                .map(userLikeArticle -> {
+                    Article article = articleRepository.findById(userLikeArticle.getArticleId()).get();
+                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
+                    Boolean isMember = isMember(article.getId(), currentId);
+                    articlePageVO.setIsLike(isMember);
+                    return articlePageVO;
+                })
+                .toList();
+        return Result.success(articlePageVOS);
+    }
+
+    /**
+     * 获取当前用户的文章
+     *
+     * @return
+     */
+    @Override
+    public Result<List<ArticlePageVO>> getMyArticle() {
+        Long currentId = BaseContext.getCurrentId();
+        List<Article> allByUserId = articleRepository.findAllByUserId(currentId);
+        List<ArticlePageVO> articlePageVOS = allByUserId
+                .stream()
+                .map(article -> {
+                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
+                    Boolean isMember = isMember(article.getId(), currentId);
+                    articlePageVO.setIsLike(isMember);
+                    return articlePageVO;
+                })
+                .toList();
+        return Result.success(articlePageVOS);
+    }
+
+    /**
+     * 判断用户是否对文章点赞,
+     *
+     * @param articleId
+     * @param userId
+     * @return
+     */
+    private Boolean isMember(Long articleId, Long userId) {
+        return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + articleId, userId.toString());
     }
 }

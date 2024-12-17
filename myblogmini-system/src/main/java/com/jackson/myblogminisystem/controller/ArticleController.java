@@ -4,8 +4,11 @@ import com.jackson.dto.ArticleLikeDTO;
 import com.jackson.myblogminisystem.service.ArticleService;
 import com.jackson.result.PageResult;
 import com.jackson.result.Result;
+import com.jackson.vo.ArticlePageVO;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/article")
@@ -37,5 +40,19 @@ public class ArticleController {
     @PostMapping("/like")
     public void doArticleLike(@RequestBody ArticleLikeDTO articleLikeDTO) {
         articleService.doArticleLike(articleLikeDTO.getId());
+    }
+
+    /**
+     * 获取用户点赞文章接口
+     * @return
+     */
+    @GetMapping("/like")
+    public Result<List<ArticlePageVO>> getLikeArticle() {
+        return articleService.getLikeArticle();
+    }
+
+    @GetMapping("/my")
+    public Result<List<ArticlePageVO>> getMyArticle() {
+        return articleService.getMyArticle();
     }
 }
