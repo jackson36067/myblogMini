@@ -44,15 +44,23 @@ public class ArticleController {
 
     /**
      * 获取用户点赞文章接口
+     *
      * @return
      */
     @GetMapping("/like")
-    public Result<List<ArticlePageVO>> getLikeArticle() {
-        return articleService.getLikeArticle();
+    public Result<List<ArticlePageVO>> getLikeArticle(@RequestParam(required = false) String title) {
+        return articleService.getLikeArticle(title);
     }
 
+    /**
+     * 获取用户文章
+     *
+     * @param type  0:已展示 1:为展示
+     * @param title
+     * @return
+     */
     @GetMapping("/my")
-    public Result<List<ArticlePageVO>> getMyArticle() {
-        return articleService.getMyArticle();
+    public Result<List<ArticlePageVO>> getMyArticle(Integer type, @RequestParam(required = false) String title) {
+        return articleService.getMyArticle(type, title);
     }
 }

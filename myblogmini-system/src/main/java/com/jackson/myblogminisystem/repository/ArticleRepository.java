@@ -14,4 +14,10 @@ public interface ArticleRepository extends JpaRepository<Article, Long>, JpaSpec
 
     @Query("select a from Article a where a.user.id = :userId")
     List<Article> findAllByUserId(Long userId);
+
+    @Query("select a from Article a where a.isShow = :isShow")
+    List<Article> findALlByIsShow(Boolean isShow);
+
+    @Query("select a from Article a where a.user.id = :userId and a.title like concat('%', :title, '%')")
+    List<Article> findAllByUserIdAndTitle(Long userId,String title);
 }

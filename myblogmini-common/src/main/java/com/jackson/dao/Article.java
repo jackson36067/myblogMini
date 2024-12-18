@@ -35,19 +35,23 @@ public class Article implements Serializable {
     private LocalDateTime updateTime;
     @Column(name = "cover_image")
     private String coverImage;
+    @Column(name = "is_show")
+    private Boolean isShow;
+    @Column(name = "total_collect")
+    private Integer totalCollect;
 
     @ManyToOne
-    @JoinColumn(name = "classify_id",referencedColumnName = "id")
+    @JoinColumn(name = "classify_id", referencedColumnName = "id")
     private ArticleClassify articleClassify;
 
     @ManyToOne
-    @JoinColumn(name = "user_id",referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     public Article() {
     }
 
-    public Article(Long id, String title, String content, Integer totalComment, Integer totalLike, Integer totalVisit, LocalDateTime createTime, LocalDateTime updateTime, String coverImage, User user,ArticleClassify articleClassify) {
+    public Article(Long id, String title, String content, Integer totalComment, Integer totalLike, Integer totalVisit, LocalDateTime createTime, LocalDateTime updateTime, String coverImage, User user, ArticleClassify articleClassify, Boolean isShow, Integer totalCollect) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -59,6 +63,8 @@ public class Article implements Serializable {
         this.coverImage = coverImage;
         this.articleClassify = articleClassify;
         this.user = user;
+        this.isShow = isShow;
+        this.totalCollect = totalCollect;
     }
 
     public Long getId() {
@@ -149,17 +155,33 @@ public class Article implements Serializable {
         this.articleClassify = articleClassify;
     }
 
+    public Boolean getIsShow() {
+        return isShow;
+    }
+
+    public void setIsShow(Boolean show) {
+        isShow = show;
+    }
+
+    public Integer getTotalCollect() {
+        return totalCollect;
+    }
+
+    public void setTotalCollect(Integer totalCollect) {
+        this.totalCollect = totalCollect;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Article article = (Article) o;
-        return Objects.equals(id, article.id) && Objects.equals(title, article.title) && Objects.equals(content, article.content) && Objects.equals(totalComment, article.totalComment) && Objects.equals(totalLike, article.totalLike) && Objects.equals(totalVisit, article.totalVisit) && Objects.equals(createTime, article.createTime) && Objects.equals(updateTime, article.updateTime) && Objects.equals(coverImage, article.coverImage) && Objects.equals(articleClassify, article.articleClassify) && Objects.equals(user, article.user);
+        return Objects.equals(id, article.id) && Objects.equals(title, article.title) && Objects.equals(content, article.content) && Objects.equals(totalComment, article.totalComment) && Objects.equals(totalLike, article.totalLike) && Objects.equals(totalVisit, article.totalVisit) && Objects.equals(createTime, article.createTime) && Objects.equals(updateTime, article.updateTime) && Objects.equals(coverImage, article.coverImage) && Objects.equals(articleClassify, article.articleClassify) && Objects.equals(user, article.user) & Objects.equals(isShow, article.isShow) & Objects.equals(totalCollect, article.totalCollect);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, content, totalComment, totalLike, totalVisit, createTime, updateTime, coverImage, articleClassify, user);
+        return Objects.hash(id, title, content, totalComment, totalLike, totalVisit, createTime, updateTime, coverImage, articleClassify, user, isShow, totalCollect);
     }
 
     @Override
@@ -174,6 +196,8 @@ public class Article implements Serializable {
                 ", createTime=" + createTime +
                 ", updateTime=" + updateTime +
                 ", coverImage='" + coverImage + '\'' +
+                ", isShow=" + isShow +
+                ", totalCollect=" + totalCollect +
                 ", articleClassify=" + articleClassify +
                 ", user=" + user +
                 '}';

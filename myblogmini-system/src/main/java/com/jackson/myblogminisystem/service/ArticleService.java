@@ -11,7 +11,7 @@ public interface ArticleService {
 
     void doArticleLike(Long id);
 
-    Result<List<ArticlePageVO>> getLikeArticle();
+    Result<List<ArticlePageVO>> getLikeArticle(String title);
 
-    Result<List<ArticlePageVO>> getMyArticle();
+    Result<List<ArticlePageVO>> getMyArticle(Integer type, String title);
 }

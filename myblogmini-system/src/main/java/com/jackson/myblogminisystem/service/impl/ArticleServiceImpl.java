@@ -66,6 +66,7 @@ public class ArticleServiceImpl implements ArticleService {
         Page<Article> articleRepositoryAll = articleRepository.findAll(articleSpecification, pageRequest);
         List<ArticlePageVO> articlePageVOS = articleRepositoryAll.getContent()
                 .stream()
+                .filter(Article::getIsShow) // 过滤出所有展示的文章
                 .map(article -> {
                     ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
                     String nickName = userRepository.findNickNameById(article.getUser().getId());
@@ -116,19 +117,26 @@ public class ArticleServiceImpl implements ArticleService {
      * @return
      */
     @Override
-    public Result<List<ArticlePageVO>> getLikeArticle() {
+    public Result<List<ArticlePageVO>> getLikeArticle(String title) {
         Long currentId = BaseContext.getCurrentId();
         List<UserLikeArticle> byUserId = userLikeArticleRepository.findAllByUserId(currentId);
-        List<ArticlePageVO> articlePageVOS = byUserId
+        List<Article> articleList;
+        articleList = byUserId
                 .stream()
                 .map(userLikeArticle -> {
                     Article article = articleRepository.findById(userLikeArticle.getArticleId()).get();
-                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
-                    Boolean isMember = isMember(article.getId(), currentId);
-                    articlePageVO.setIsLike(isMember);
-                    return articlePageVO;
+                    return article;
                 })
                 .toList();
+        if (StringUtils.hasText(title)) {
+            articleList = articleList.stream().filter(article -> article.getTitle().contains(title)).toList();
+        }
+        List<ArticlePageVO> articlePageVOS = articleList.stream().map(article -> {
+            ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
+            Boolean isMember = isMember(article.getId(), currentId);
+            articlePageVO.setIsLike(isMember);
+            return articlePageVO;
+        }).toList();
         return Result.success(articlePageVOS);
     }
 
@@ -138,11 +146,24 @@ public class ArticleServiceImpl implements ArticleService {
      * @return
      */
     @Override
-    public Result<List<ArticlePageVO>> getMyArticle() {
+    public Result<List<ArticlePageVO>> getMyArticle(Integer type, String title) {
         Long currentId = BaseContext.getCurrentId();
-        List<Article> allByUserId = articleRepository.findAllByUserId(currentId);
+        List<Article> allByUserId;
+        if (StringUtils.hasText(title)) {
+            allByUserId = articleRepository.findAllByUserIdAndTitle(currentId, title);
+        } else {
+            allByUserId = articleRepository.findAllByUserId(currentId);
+
+        }
         List<ArticlePageVO> articlePageVOS = allByUserId
                 .stream()
+                .filter(article -> {
+                    if (type == 0) {
+                        return article.getIsShow();
+                    } else {
+                        return !article.getIsShow();
+                    }
+                })
                 .map(article -> {
                     ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
                     Boolean isMember = isMember(article.getId(), currentId);
