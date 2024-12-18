@@ -22,7 +22,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -64,18 +66,7 @@ public class ArticleServiceImpl implements ArticleService {
             pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "totalLike"));
         }
         Page<Article> articleRepositoryAll = articleRepository.findAll(articleSpecification, pageRequest);
-        List<ArticlePageVO> articlePageVOS = articleRepositoryAll.getContent()
-                .stream()
-                .filter(Article::getIsShow) // 过滤出所有展示的文章
-                .map(article -> {
-                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
-                    String nickName = userRepository.findNickNameById(article.getUser().getId());
-                    articlePageVO.setAuthor(nickName);
-                    Boolean isMember = isMember(article.getId(), currentId);
-                    articlePageVO.setIsLike(isMember);
-                    return articlePageVO;
-                })
-                .toList();
+        List<ArticlePageVO> articlePageVOS = getResult(articleRepositoryAll.getContent());
         PageResult pageResult = new PageResult(articleRepositoryAll.getTotalElements(), articleRepositoryAll.getTotalPages(), articlePageVOS);
         return Result.success(pageResult);
     }
@@ -124,19 +115,13 @@ public class ArticleServiceImpl implements ArticleService {
         articleList = byUserId
                 .stream()
                 .map(userLikeArticle -> {
-                    Article article = articleRepository.findById(userLikeArticle.getArticleId()).get();
-                    return article;
+                    return articleRepository.findById(userLikeArticle.getArticleId()).get();
                 })
                 .toList();
         if (StringUtils.hasText(title)) {
             articleList = articleList.stream().filter(article -> article.getTitle().contains(title)).toList();
         }
-        List<ArticlePageVO> articlePageVOS = articleList.stream().map(article -> {
-            ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
-            Boolean isMember = isMember(article.getId(), currentId);
-            articlePageVO.setIsLike(isMember);
-            return articlePageVO;
-        }).toList();
+        List<ArticlePageVO> articlePageVOS = getResult(articleList);
         return Result.success(articlePageVOS);
     }
 
@@ -153,9 +138,8 @@ public class ArticleServiceImpl implements ArticleService {
             allByUserId = articleRepository.findAllByUserIdAndTitle(currentId, title);
         } else {
             allByUserId = articleRepository.findAllByUserId(currentId);
-
         }
-        List<ArticlePageVO> articlePageVOS = allByUserId
+        allByUserId = allByUserId
                 .stream()
                 .filter(article -> {
                     if (type == 0) {
@@ -163,14 +147,8 @@ public class ArticleServiceImpl implements ArticleService {
                     } else {
                         return !article.getIsShow();
                     }
-                })
-                .map(article -> {
-                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
-                    Boolean isMember = isMember(article.getId(), currentId);
-                    articlePageVO.setIsLike(isMember);
-                    return articlePageVO;
-                })
-                .toList();
+                }).toList();
+        List<ArticlePageVO> articlePageVOS = getResult(allByUserId);
         return Result.success(articlePageVOS);
     }
 
@@ -183,5 +161,27 @@ public class ArticleServiceImpl implements ArticleService {
      */
     private Boolean isMember(Long articleId, Long userId) {
         return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + articleId, userId.toString());
+    }
+
+    /**
+     * 获取封装后的数据
+     * @param articleList
+     * @return
+     */
+    private List<ArticlePageVO> getResult(List<Article> articleList) {
+        Long currentId = BaseContext.getCurrentId();
+        return articleList.stream()
+                .filter(Article::getIsShow) // 过滤出所有展示的文章
+                .map(article -> {
+                    ArticlePageVO articlePageVO = BeanUtil.copyProperties(article, ArticlePageVO.class);
+                    String[] split = article.getTags().split(",");
+                    articlePageVO.setTags(Arrays.stream(split).toList());
+                    String nickName = userRepository.findNickNameById(article.getUser().getId());
+                    articlePageVO.setAuthor(nickName);
+                    Boolean isMember = isMember(article.getId(), currentId);
+                    articlePageVO.setIsLike(isMember);
+                    return articlePageVO;
+                })
+                .toList();
     }
 }

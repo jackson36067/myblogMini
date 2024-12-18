@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 public class ArticlePageVO implements Serializable {
@@ -18,11 +19,13 @@ public class ArticlePageVO implements Serializable {
     private Integer totalLike;
     private Integer totalComment;
     private Boolean isLike; // 该文章是否被单前用户点赞
+    private String description;
+    private List<String> tags;
 
     public ArticlePageVO() {
     }
 
-    public ArticlePageVO(Long id, String title, String coverImage, String author, LocalDate createTime, Integer totalVisit, Integer totalLike, Integer totalComment,Boolean isLike) {
+    public ArticlePageVO(Long id, String title, String coverImage, String author, LocalDate createTime, Integer totalVisit, Integer totalLike, Integer totalComment,Boolean isLike,String description,List<String> tags) {
         this.id = id;
         this.title = title;
         this.coverImage = coverImage;
@@ -32,6 +35,8 @@ public class ArticlePageVO implements Serializable {
         this.totalLike = totalLike;
         this.totalComment = totalComment;
         this.isLike = isLike;
+        this.description = description;
+        this.tags = tags;
     }
 
     public Long getId() {
@@ -106,17 +111,33 @@ public class ArticlePageVO implements Serializable {
         isLike = like;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArticlePageVO that = (ArticlePageVO) o;
-        return Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(coverImage, that.coverImage) && Objects.equals(author, that.author) && Objects.equals(createTime, that.createTime) && Objects.equals(totalVisit, that.totalVisit) && Objects.equals(totalLike, that.totalLike) && Objects.equals(totalComment, that.totalComment) && Objects.equals(isLike, that.isLike);
+        return Objects.equals(id, that.id) && Objects.equals(title, that.title) && Objects.equals(coverImage, that.coverImage) && Objects.equals(author, that.author) && Objects.equals(createTime, that.createTime) && Objects.equals(totalVisit, that.totalVisit) && Objects.equals(totalLike, that.totalLike) && Objects.equals(totalComment, that.totalComment) && Objects.equals(isLike, that.isLike) && Objects.equals(description, that.description) && Objects.equals(tags, that.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, coverImage, author, createTime, totalVisit, totalLike, totalComment, isLike);
+        return Objects.hash(id, title, coverImage, author, createTime, totalVisit, totalLike, totalComment, isLike, description, tags);
     }
 
     @Override
@@ -131,6 +152,8 @@ public class ArticlePageVO implements Serializable {
                 ", totalLike=" + totalLike +
                 ", totalComment=" + totalComment +
                 ", isLike=" + isLike +
+                ", description='" + description + '\'' +
+                ", tags=" + tags +
                 '}';
     }
 }
