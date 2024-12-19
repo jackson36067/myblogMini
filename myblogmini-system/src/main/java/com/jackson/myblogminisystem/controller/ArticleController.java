@@ -5,6 +5,7 @@ import com.jackson.myblogminisystem.service.ArticleService;
 import com.jackson.result.PageResult;
 import com.jackson.result.Result;
 import com.jackson.vo.ArticlePageVO;
+import com.jackson.vo.ArticleVO;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,5 +63,15 @@ public class ArticleController {
     @GetMapping("/my")
     public Result<List<ArticlePageVO>> getMyArticle(Integer type, @RequestParam(required = false) String title) {
         return articleService.getMyArticle(type, title);
+    }
+
+    /**
+     * 获取文章详情接口
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}")
+    public Result<ArticleVO> getArticleDetail(@PathVariable Long id) {
+        return articleService.getArticleDetail(id);
     }
 }

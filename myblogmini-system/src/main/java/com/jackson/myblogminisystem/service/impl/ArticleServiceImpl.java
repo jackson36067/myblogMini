@@ -12,6 +12,7 @@ import com.jackson.myblogminisystem.service.ArticleService;
 import com.jackson.result.PageResult;
 import com.jackson.result.Result;
 import com.jackson.vo.ArticlePageVO;
+import com.jackson.vo.ArticleVO;
 import jakarta.annotation.Resource;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -153,6 +154,24 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     /**
+     * 获取文章详情接口
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public Result<ArticleVO> getArticleDetail(Long id) {
+        Article article = articleRepository.findById(id).get();
+        ArticleVO articleVO = BeanUtil.copyProperties(article, ArticleVO.class);
+        Boolean isMember = isMember(id, BaseContext.getCurrentId());
+        articleVO.setIsLike(isMember);
+        // 文章访问数 + 1
+        article.setTotalVisit(article.getTotalVisit() + 1);
+        articleRepository.saveAndFlush(article);
+        return Result.success(articleVO);
+    }
+
+    /**
      * 判断用户是否对文章点赞,
      *
      * @param articleId
@@ -165,6 +184,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     /**
      * 获取封装后的数据
+     *
      * @param articleList
      * @return
      */
