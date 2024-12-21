@@ -1,12 +1,16 @@
 package com.jackson.dao;
 
 import jakarta.persistence.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "user_follow")
+@EntityListeners(AuditingEntityListener.class)
 public class UserFollow implements Serializable {
 
     @Id
@@ -20,13 +24,22 @@ public class UserFollow implements Serializable {
     @Column(name = "user_follow_id")
     private Long userFollowId; // 关注用户id
 
+    @Column(name = "comment")
+    private String comment;
+
+    @Column(name = "create_time")
+    @CreatedDate
+    private LocalDateTime createTime;
+
     public UserFollow() {
     }
 
-    public UserFollow(Long id, Long userId, Long userFollowId) {
+    public UserFollow(Long id, Long userId, Long userFollowId,String comment,LocalDateTime createTime) {
         this.id = id;
         this.userId = userId;
         this.userFollowId = userFollowId;
+        this.comment = comment;
+        this.createTime = createTime;
     }
 
     public Long getId() {
@@ -53,17 +66,25 @@ public class UserFollow implements Serializable {
         this.userFollowId = userFollowId;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         UserFollow that = (UserFollow) o;
-        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(userFollowId, that.userFollowId);
+        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(userFollowId, that.userFollowId) && Objects.equals(comment, that.comment);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, userFollowId);
+        return Objects.hash(id, userId, userFollowId, comment);
     }
 
     @Override
@@ -72,6 +93,7 @@ public class UserFollow implements Serializable {
                 "id=" + id +
                 ", userId=" + userId +
                 ", userFollowId=" + userFollowId +
+                ", comment='" + comment + '\'' +
                 '}';
     }
 }

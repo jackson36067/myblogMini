@@ -3,10 +3,15 @@ package com.jackson.myblogminisystem.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.jackson.constant.JwtConstant;
+import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
+import com.jackson.dao.Article;
 import com.jackson.dao.User;
+import com.jackson.dao.UserFollow;
 import com.jackson.dto.UpdateUserDTO;
 import com.jackson.dto.UserLoginDTO;
+import com.jackson.myblogminisystem.repository.ArticleRepository;
+import com.jackson.myblogminisystem.repository.UserFollowRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
 import com.jackson.myblogminisystem.service.UserService;
 import com.jackson.properties.WeChatProperties;
@@ -18,12 +23,14 @@ import com.jackson.vo.LoginResultVO;
 import com.jackson.vo.UserResult;
 import jakarta.annotation.Resource;
 import com.alibaba.fastjson.JSON;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -37,6 +44,12 @@ public class UserServiceImpl implements UserService {
     private WeChatProperties weChatProperties;
     @Resource
     private AliOssUtils aliOssUtils;
+    @Resource
+    private UserFollowRepository userFollowRepository;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private ArticleRepository articleRepository;
 
     /**
      * 用户登录
@@ -73,6 +86,39 @@ public class UserServiceImpl implements UserService {
         Long currentId = BaseContext.getCurrentId();
         User user = userRepository.findById(currentId).get();
         UserResult userResult = BeanUtil.copyProperties(user, UserResult.class);
+        List<Article> allByUserId = articleRepository.findAllByUserId(currentId);
+        // 获取用户文章总获赞数
+        int totalLike = 0;
+        if (allByUserId != null && !allByUserId.isEmpty()) {
+            totalLike = allByUserId.stream().mapToInt(Article::getTotalLike).sum();
+        }
+        // 获取该用户总关注数量
+        List<UserFollow> byUserId = userFollowRepository.findAllByUserId(currentId);
+        int totalFollow = 0;
+        int totalFriend = 0;
+        if (byUserId != null && !byUserId.isEmpty()) {
+            totalFollow = byUserId.size();
+            // 获取用户所有朋友数量
+            totalFriend = byUserId.stream().mapToInt(userfollow -> {
+                int initFriendNum = 0;
+                // 判断该用户关注的用户是否关注关注该用户
+                Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + userfollow.getUserFollowId(), currentId.toString());
+                if (Boolean.TRUE.equals(isFollow)) {
+                    initFriendNum++;
+                }
+                return initFriendNum;
+            }).sum();
+        }
+        // 获取该用户的总粉丝数
+        List<UserFollow> allByUserFollowId = userFollowRepository.findAllByUserFollowId(currentId);
+        int totalFans = 0;
+        if (allByUserFollowId != null && !allByUserFollowId.isEmpty()) {
+            totalFans = allByUserFollowId.size();
+        }
+        userResult.setTotalLike(totalLike);
+        userResult.setTotalFriend(totalFriend);
+        userResult.setTotalFollow(totalFollow);
+        userResult.setTotalFans(totalFans);
         return Result.success(userResult);
     }
 
