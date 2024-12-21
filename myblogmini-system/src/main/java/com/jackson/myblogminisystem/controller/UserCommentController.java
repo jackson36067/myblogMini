@@ -29,10 +29,20 @@ public class UserCommentController {
 
     /**
      * 用户在文章中发布评论接口
+     *
      * @param sendCommentDTO
      */
     @PostMapping("/send")
     public void sendComment(@RequestBody SendCommentDTO sendCommentDTO) {
         userCommentService.sendComment(sendCommentDTO);
+    }
+
+    /**
+     *
+     * @param id 评论id
+     */
+    @PostMapping("/like/{id}")
+    public void doLikeComment(@PathVariable Long id) {
+        userCommentService.doLikeComment(id);
     }
 }

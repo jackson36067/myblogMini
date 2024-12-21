@@ -11,20 +11,24 @@ public class UserCommentVO implements Serializable {
     private String nickName;
     @JsonFormat(pattern = "yyyy/MM/dd HH:mm:ss")
     private LocalDateTime createTime;
+    private Long userId;
     private String content;
     private String avatar;
+    private Integer totalLike;
     private Boolean isLike;
     private Boolean isFollow;
 
     public UserCommentVO() {
     }
 
-    public UserCommentVO(Long id, String nickName, LocalDateTime createTime, String content, String avatar, Boolean isLike, Boolean isFollow) {
+    public UserCommentVO(Long id, String nickName, LocalDateTime createTime, Long userId, String content, String avatar, Integer totalLike, Boolean isLike, Boolean isFollow) {
         this.id = id;
         this.nickName = nickName;
         this.createTime = createTime;
+        this.userId = userId;
         this.content = content;
         this.avatar = avatar;
+        this.totalLike = totalLike;
         this.isLike = isLike;
         this.isFollow = isFollow;
     }
@@ -85,17 +89,33 @@ public class UserCommentVO implements Serializable {
         isFollow = follow;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public Integer getTotalLike() {
+        return totalLike;
+    }
+
+    public void setTotalLike(Integer totalLike) {
+        this.totalLike = totalLike;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         UserCommentVO that = (UserCommentVO) o;
-        return Objects.equals(id, that.id) && Objects.equals(nickName, that.nickName) && Objects.equals(createTime, that.createTime) && Objects.equals(content, that.content) && Objects.equals(avatar, that.avatar) && Objects.equals(isLike, that.isLike) && Objects.equals(isFollow, that.isFollow);
+        return Objects.equals(id, that.id) && Objects.equals(nickName, that.nickName) && Objects.equals(createTime, that.createTime) && Objects.equals(userId, that.userId) && Objects.equals(content, that.content) && Objects.equals(avatar, that.avatar) && Objects.equals(totalLike, that.totalLike) && Objects.equals(isLike, that.isLike) && Objects.equals(isFollow, that.isFollow);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, nickName, createTime, content, avatar, isLike, isFollow);
+        return Objects.hash(id, nickName, createTime, userId, content, avatar, totalLike, isLike, isFollow);
     }
 
     @Override
@@ -104,8 +124,10 @@ public class UserCommentVO implements Serializable {
                 "id=" + id +
                 ", nickName='" + nickName + '\'' +
                 ", createTime=" + createTime +
+                ", userId=" + userId +
                 ", content='" + content + '\'' +
                 ", avatar='" + avatar + '\'' +
+                ", totalLike=" + totalLike +
                 ", isLike=" + isLike +
                 ", isFollow=" + isFollow +
                 '}';

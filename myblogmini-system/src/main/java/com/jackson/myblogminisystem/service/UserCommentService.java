@@ -8,4 +8,6 @@ public interface UserCommentService {
     Result<PageResult> getUserComment(Long id);
 
     void sendComment(SendCommentDTO sendCommentDTO);
+
+    void doLikeComment(Long id);
 }

@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
+import com.jackson.dao.User;
 import com.jackson.dao.UserLikeArticle;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
 import com.jackson.myblogminisystem.repository.UserLikeArticleRepository;
@@ -23,11 +24,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
@@ -163,8 +162,14 @@ public class ArticleServiceImpl implements ArticleService {
     public Result<ArticleVO> getArticleDetail(Long id) {
         Article article = articleRepository.findById(id).get();
         ArticleVO articleVO = BeanUtil.copyProperties(article, ArticleVO.class);
-        Boolean isMember = isMember(id, BaseContext.getCurrentId());
+        Boolean isMember = isLike(id, BaseContext.getCurrentId());
         articleVO.setIsLike(isMember);
+        User user = userRepository.findById(article.getUser().getId()).get();
+        articleVO.setAvatar(user.getAvatar());
+        articleVO.setNickName(user.getNickName());
+        articleVO.setIsFollow(isFollow(BaseContext.getCurrentId(), user.getId()));
+        String[] tags = article.getTags().split(",");
+        articleVO.setTags(Arrays.stream(tags).toList());
         // 文章访问数 + 1
         article.setTotalVisit(article.getTotalVisit() + 1);
         articleRepository.saveAndFlush(article);
@@ -178,8 +183,19 @@ public class ArticleServiceImpl implements ArticleService {
      * @param userId
      * @return
      */
-    private Boolean isMember(Long articleId, Long userId) {
+    private Boolean isLike(Long articleId, Long userId) {
         return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + articleId, userId.toString());
+    }
+
+    /**
+     * 判断是否关注
+     *
+     * @param userId
+     * @param userFollowId
+     * @return
+     */
+    private Boolean isFollow(Long userId, Long userFollowId) {
+        return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + userId, userFollowId.toString());
     }
 
     /**
@@ -198,7 +214,7 @@ public class ArticleServiceImpl implements ArticleService {
                     articlePageVO.setTags(Arrays.stream(split).toList());
                     String nickName = userRepository.findNickNameById(article.getUser().getId());
                     articlePageVO.setAuthor(nickName);
-                    Boolean isMember = isMember(article.getId(), currentId);
+                    Boolean isMember = isLike(article.getId(), currentId);
                     articlePageVO.setIsLike(isMember);
                     return articlePageVO;
                 })

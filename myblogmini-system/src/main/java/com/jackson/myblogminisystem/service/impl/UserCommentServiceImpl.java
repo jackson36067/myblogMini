@@ -1,6 +1,7 @@
 package com.jackson.myblogminisystem.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
 import com.jackson.dao.User;
@@ -15,6 +16,7 @@ import com.jackson.result.Result;
 import com.jackson.vo.UserCommentVO;
 import jakarta.annotation.Resource;
 import org.springframework.data.domain.*;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,11 +31,13 @@ public class UserCommentServiceImpl implements UserCommentService {
     private UserRepository userRepository;
     @Resource
     private ArticleRepository articleRepository;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 根据文章id获取评论
      *
-     * @param id
+     * @param id 文章id
      * @return
      */
     @Override
@@ -44,13 +48,21 @@ public class UserCommentServiceImpl implements UserCommentService {
                 .stream()
                 .map(userComment -> {
                     UserCommentVO userCommentVO = BeanUtil.copyProperties(userComment, UserCommentVO.class);
-                    User user = userRepository.findById(userComment.getUser().getId()).get();
+                    Long userId = userComment.getUser().getId();
+                    User user = userRepository.findById(userId).get();
                     userCommentVO.setAvatar(user.getAvatar());
                     userCommentVO.setNickName(user.getNickName());
+                    userCommentVO.setUserId(userId);
+                    // 判断该用户是否点赞该评论,是否关注发布评论的作者
+                    // 获取用户关注信息
+                    Long currentId = BaseContext.getCurrentId();
+                    Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, userId.toString());
+                    userCommentVO.setIsFollow(isFollow);
+                    Boolean isLike = stringRedisTemplate.opsForSet().isMember(RedisConstant.COMMENT_LIKE_KEY_PREFIX + userComment.getId(), currentId.toString());
+                    userCommentVO.setIsLike(isLike);
                     return userCommentVO;
                 })
                 .toList();
-        // TODO:判断该用户是否点赞该评论,是否关注发布评论的作者
         PageResult pageResult = new PageResult(allByArticleId.getTotalElements(), allByArticleId.getTotalPages(), userCommentVOList);
         return Result.success(pageResult);
     }
@@ -73,5 +85,27 @@ public class UserCommentServiceImpl implements UserCommentService {
         userComment.setTotalLike(0);
         userCommentRepository.save(userComment);
         // TODO: 将信息添加到消息队列,然后通知文章作者
+    }
+
+    /**
+     * 点赞评论
+     *
+     * @param id 评论id
+     */
+    @Override
+    public void doLikeComment(Long id) {
+        Long currentId = BaseContext.getCurrentId();
+        // 判断是否点赞过
+        String key = RedisConstant.COMMENT_LIKE_KEY_PREFIX + id;
+        if (Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, currentId.toString()))) {
+            // 点赞过 -> 取消点赞
+            stringRedisTemplate.opsForSet().remove(key, currentId.toString());
+        } else {
+            stringRedisTemplate.opsForSet().add(key, currentId.toString());
+        }
+        // 修改评论总点赞数
+        UserComment userComment = userCommentRepository.findById(id).get();
+        userComment.setTotalLike(userComment.getTotalLike() + 1);
+        userCommentRepository.saveAndFlush(userComment);
     }
 }
