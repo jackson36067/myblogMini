@@ -63,7 +63,7 @@ public class ArticleServiceImpl implements ArticleService {
         // 初始获取最近文章
         PageRequest pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
         if (sign == 1) {
-            pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "totalLike"));
+            pageRequest = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "totalVisit"));
         }
         Page<Article> articleRepositoryAll = articleRepository.findAll(articleSpecification, pageRequest);
         List<ArticlePageVO> articlePageVOS = getResult(articleRepositoryAll.getContent());
@@ -167,9 +167,12 @@ public class ArticleServiceImpl implements ArticleService {
         User user = userRepository.findById(article.getUser().getId()).get();
         articleVO.setAvatar(user.getAvatar());
         articleVO.setNickName(user.getNickName());
-        articleVO.setIsFollow(isFollow(BaseContext.getCurrentId(), user.getId()));
+        Long currentId = BaseContext.getCurrentId();
+        articleVO.setIsFollow(isFollow(currentId, user.getId()));
+        articleVO.setArticleId(id);
         String[] tags = article.getTags().split(",");
         articleVO.setTags(Arrays.stream(tags).toList());
+        articleVO.setIsFavorite(isFavorite(currentId, id));
         // 文章访问数 + 1
         article.setTotalVisit(article.getTotalVisit() + 1);
         articleRepository.saveAndFlush(article);
@@ -177,7 +180,32 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     /**
-     * 判断用户是否对文章点赞,
+     * 收藏文章
+     *
+     * @param id
+     */
+    @Override
+    public void doFavoriteArticle(Long id) {
+        Long currentId = BaseContext.getCurrentId();
+        Article article = articleRepository.findById(id).get();
+        Boolean isFavorite = stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + currentId, id.toString());
+        // 判断是否收藏
+        if (Boolean.TRUE.equals(isFavorite)) {
+            // 取消收藏
+            stringRedisTemplate.opsForSet().remove(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + currentId, id.toString());
+            // 收藏数➖1
+            article.setTotalCollect(article.getTotalCollect() - 1);
+        } else {
+            // 收藏
+            stringRedisTemplate.opsForSet().add(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + currentId, id.toString());
+            // 收藏数➕1
+            article.setTotalCollect(article.getTotalCollect() + 1);
+        }
+        articleRepository.saveAndFlush(article);
+    }
+
+    /**
+     * 判断用户是否对文章点赞
      *
      * @param articleId
      * @param userId
@@ -196,6 +224,16 @@ public class ArticleServiceImpl implements ArticleService {
      */
     private Boolean isFollow(Long userId, Long userFollowId) {
         return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_LIKE_PREFIX + userId, userFollowId.toString());
+    }
+
+    /**
+     * 判断是否收藏文章
+     * @param userId
+     * @param articleId
+     * @return
+     */
+    private Boolean isFavorite(Long userId, Long articleId) {
+        return stringRedisTemplate.opsForSet().isMember(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + userId, articleId.toString());
     }
 
     /**

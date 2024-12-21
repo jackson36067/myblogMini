@@ -23,8 +23,8 @@ public class UserCommentController {
      * @return
      */
     @GetMapping("/list")
-    public Result<PageResult> getUserComment(Long id) {
-        return userCommentService.getUserComment(id);
+    public Result<PageResult> getUserComment(Long id,@RequestParam(required = false) Boolean isAll) {
+        return userCommentService.getUserComment(id,isAll);
     }
 
     /**
@@ -38,7 +38,7 @@ public class UserCommentController {
     }
 
     /**
-     *
+     * 点赞评论
      * @param id 评论id
      */
     @PostMapping("/like/{id}")

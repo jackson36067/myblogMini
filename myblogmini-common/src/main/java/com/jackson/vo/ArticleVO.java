@@ -22,11 +22,13 @@ public class ArticleVO implements Serializable {
     private Boolean isLike;
     private Boolean isFollow;
     private List<String> tags;
+    private Long articleId;
+    private Boolean isFavorite;
 
     public ArticleVO() {
     }
 
-    public ArticleVO(Long id, String title, LocalDateTime createTime, String content, String coverImage, Integer totalComment, Integer totalLike, Integer totalVisit, String avatar, String nickName, Boolean isLike,Boolean isFollow,List<String> tags) {
+    public ArticleVO(Long id, String title, LocalDateTime createTime, String content, String coverImage, Integer totalComment, Integer totalLike, Integer totalVisit, String avatar, String nickName, Boolean isLike, Boolean isFollow, List<String> tags, Long articleId,Boolean isFavorite) {
         this.id = id;
         this.title = title;
         this.createTime = createTime;
@@ -40,6 +42,8 @@ public class ArticleVO implements Serializable {
         this.isLike = isLike;
         this.isFollow = isFollow;
         this.tags = tags;
+        this.articleId = articleId;
+        this.isFavorite = isFavorite;
     }
 
     public Long getId() {
@@ -146,17 +150,33 @@ public class ArticleVO implements Serializable {
         this.tags = tags;
     }
 
+    public Long getArticleId() {
+        return articleId;
+    }
+
+    public void setArticleId(Long articleId) {
+        this.articleId = articleId;
+    }
+
+    public Boolean getIsFavorite() {
+        return isFavorite;
+    }
+
+    public void setIsFavorite(Boolean favorite) {
+        isFavorite = favorite;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArticleVO articleVO = (ArticleVO) o;
-        return Objects.equals(id, articleVO.id) && Objects.equals(title, articleVO.title) && Objects.equals(createTime, articleVO.createTime) && Objects.equals(content, articleVO.content) && Objects.equals(coverImage, articleVO.coverImage) && Objects.equals(totalComment, articleVO.totalComment) && Objects.equals(totalLike, articleVO.totalLike) && Objects.equals(totalVisit, articleVO.totalVisit) && Objects.equals(avatar, articleVO.avatar) && Objects.equals(nickName, articleVO.nickName) && Objects.equals(isLike, articleVO.isLike) && Objects.equals(isFollow, articleVO.isFollow) && Objects.equals(tags, articleVO.tags);
+        return Objects.equals(id, articleVO.id) && Objects.equals(title, articleVO.title) && Objects.equals(createTime, articleVO.createTime) && Objects.equals(content, articleVO.content) && Objects.equals(coverImage, articleVO.coverImage) && Objects.equals(totalComment, articleVO.totalComment) && Objects.equals(totalLike, articleVO.totalLike) && Objects.equals(totalVisit, articleVO.totalVisit) && Objects.equals(avatar, articleVO.avatar) && Objects.equals(nickName, articleVO.nickName) && Objects.equals(isLike, articleVO.isLike) && Objects.equals(isFollow, articleVO.isFollow) && Objects.equals(tags, articleVO.tags) && Objects.equals(articleId, articleVO.articleId) && Objects.equals(isFavorite, articleVO.isFavorite);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, createTime, content, coverImage, totalComment, totalLike, totalVisit, avatar, nickName, isLike, isFollow, tags);
+        return Objects.hash(id, title, createTime, content, coverImage, totalComment, totalLike, totalVisit, avatar, nickName, isLike, isFollow, tags, articleId, isFavorite);
     }
 
     @Override
@@ -175,6 +195,8 @@ public class ArticleVO implements Serializable {
                 ", isLike=" + isLike +
                 ", isFollow=" + isFollow +
                 ", tags=" + tags +
+                ", articleId=" + articleId +
+                ", isFavorite=" + isFavorite +
                 '}';
     }
 }

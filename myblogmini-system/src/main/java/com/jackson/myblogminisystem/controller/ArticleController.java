@@ -67,11 +67,21 @@ public class ArticleController {
 
     /**
      * 获取文章详情接口
+     *
      * @param id
      * @return
      */
     @GetMapping("/{id}")
     public Result<ArticleVO> getArticleDetail(@PathVariable Long id) {
         return articleService.getArticleDetail(id);
+    }
+
+    /**
+     * 收藏文章接口
+     * @param id
+     */
+    @PostMapping("/favorite/{id}")
+    public void doFavoriteArticle(@PathVariable Long id) {
+        articleService.doFavoriteArticle(id);
     }
 }

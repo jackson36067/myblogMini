@@ -17,4 +17,6 @@ public interface ArticleService {
     Result<List<ArticlePageVO>> getMyArticle(Integer type, String title);
 
     Result<ArticleVO> getArticleDetail(Long id);
+
+    void doFavoriteArticle(Long id);
 }

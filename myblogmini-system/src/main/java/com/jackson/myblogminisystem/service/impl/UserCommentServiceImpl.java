@@ -41,10 +41,15 @@ public class UserCommentServiceImpl implements UserCommentService {
      * @return
      */
     @Override
-    public Result<PageResult> getUserComment(Long id) {
+    public Result<PageResult> getUserComment(Long id, Boolean isAll) {
         PageRequest pageRequest = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "totalLike"));
         Page<UserComment> allByArticleId = userCommentRepository.findAllByArticleId(id, pageRequest);
-        List<UserCommentVO> userCommentVOList = allByArticleId.getContent()
+        List<UserComment> content = allByArticleId.getContent();
+        // 如果是查看全部评论,就获取所有评论
+        if (isAll != null && isAll) {
+            content = userCommentRepository.findAllByArticleId(id);
+        }
+        List<UserCommentVO> userCommentVOList = content
                 .stream()
                 .map(userComment -> {
                     UserCommentVO userCommentVO = BeanUtil.copyProperties(userComment, UserCommentVO.class);
@@ -63,6 +68,7 @@ public class UserCommentServiceImpl implements UserCommentService {
                     return userCommentVO;
                 })
                 .toList();
+
         PageResult pageResult = new PageResult(allByArticleId.getTotalElements(), allByArticleId.getTotalPages(), userCommentVOList);
         return Result.success(pageResult);
     }
@@ -84,6 +90,9 @@ public class UserCommentServiceImpl implements UserCommentService {
         userComment.setCreateTime(LocalDateTime.now());
         userComment.setTotalLike(0);
         userCommentRepository.save(userComment);
+        // 将文章评论 + 1
+        article.setTotalComment(article.getTotalComment() + 1);
+        articleRepository.saveAndFlush(article);
         // TODO: 将信息添加到消息队列,然后通知文章作者
     }
 
@@ -97,15 +106,16 @@ public class UserCommentServiceImpl implements UserCommentService {
         Long currentId = BaseContext.getCurrentId();
         // 判断是否点赞过
         String key = RedisConstant.COMMENT_LIKE_KEY_PREFIX + id;
+        UserComment userComment = userCommentRepository.findById(id).get();
         if (Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(key, currentId.toString()))) {
             // 点赞过 -> 取消点赞
             stringRedisTemplate.opsForSet().remove(key, currentId.toString());
+            userComment.setTotalLike(userComment.getTotalLike() - 1);
         } else {
             stringRedisTemplate.opsForSet().add(key, currentId.toString());
+            userComment.setTotalLike(userComment.getTotalLike() + 1);
         }
         // 修改评论总点赞数
-        UserComment userComment = userCommentRepository.findById(id).get();
-        userComment.setTotalLike(userComment.getTotalLike() + 1);
         userCommentRepository.saveAndFlush(userComment);
     }
 }

@@ -11,6 +11,11 @@ import java.util.List;
 
 public interface UserCommentRepository extends JpaRepository<UserComment, Long>, JpaSpecificationExecutor<UserComment> {
 
-    @Query("select u from UserComment u where u.article.id = :id")
+    @Query("select u from UserComment u where u.article.id = :id ")
     Page<UserComment> findAllByArticleId(Long id, Pageable pageable);
+
+    @Query("select u from UserComment u where u.article.id = :id order by u.totalLike desc")
+    List<UserComment> findAllByArticleId(Long id);
+
+
 }

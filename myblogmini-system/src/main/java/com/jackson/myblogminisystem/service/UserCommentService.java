@@ -5,7 +5,7 @@ import com.jackson.result.PageResult;
 import com.jackson.result.Result;
 
 public interface UserCommentService {
-    Result<PageResult> getUserComment(Long id);
+    Result<PageResult> getUserComment(Long id,Boolean isAll);
 
     void sendComment(SendCommentDTO sendCommentDTO);
 
