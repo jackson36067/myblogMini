@@ -24,9 +24,6 @@ public class UserFollow implements Serializable {
     @Column(name = "user_follow_id")
     private Long userFollowId; // 关注用户id
 
-    @Column(name = "comment")
-    private String comment;
-
     @Column(name = "create_time")
     @CreatedDate
     private LocalDateTime createTime;
@@ -34,11 +31,10 @@ public class UserFollow implements Serializable {
     public UserFollow() {
     }
 
-    public UserFollow(Long id, Long userId, Long userFollowId,String comment,LocalDateTime createTime) {
+    public UserFollow(Long id, Long userId, Long userFollowId,LocalDateTime createTime) {
         this.id = id;
         this.userId = userId;
         this.userFollowId = userFollowId;
-        this.comment = comment;
         this.createTime = createTime;
     }
 
@@ -66,12 +62,12 @@ public class UserFollow implements Serializable {
         this.userFollowId = userFollowId;
     }
 
-    public String getComment() {
-        return comment;
+    public LocalDateTime getCreateTime() {
+        return createTime;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
     }
 
     @Override
@@ -79,12 +75,12 @@ public class UserFollow implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         UserFollow that = (UserFollow) o;
-        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(userFollowId, that.userFollowId) && Objects.equals(comment, that.comment);
+        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(userFollowId, that.userFollowId) && Objects.equals(createTime, that.createTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, userFollowId, comment);
+        return Objects.hash(id, userId, userFollowId, createTime);
     }
 
     @Override
@@ -93,7 +89,7 @@ public class UserFollow implements Serializable {
                 "id=" + id +
                 ", userId=" + userId +
                 ", userFollowId=" + userFollowId +
-                ", comment='" + comment + '\'' +
+                ", createTime=" + createTime +
                 '}';
     }
 }

@@ -62,8 +62,8 @@ public class UserServiceImpl implements UserService {
         String openid = getOpenid(userLoginDTO.getCode());
         User user = userRepository.findByOpenid(openid);
         if (user == null) {
-            user = new User();
-            user.setOpenid(openid);
+            user = BeanUtil.copyProperties(userLoginDTO, User.class);
+            user.setSex(userLoginDTO.getGender());
             user.setCreateTime(LocalDateTime.now());
             userRepository.save(user);
         }
