@@ -38,7 +38,7 @@ public class ArticleController {
      *
      * @param articleLikeDTO
      */
-    @PostMapping("/like")
+    @PostMapping("/doLike")
     public void doArticleLike(@RequestBody ArticleLikeDTO articleLikeDTO) {
         articleService.doArticleLike(articleLikeDTO.getId());
     }
