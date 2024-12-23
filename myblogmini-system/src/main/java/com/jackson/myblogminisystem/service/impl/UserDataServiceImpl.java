@@ -69,7 +69,12 @@ public class UserDataServiceImpl implements UserDataService {
                     userDataVO.setIsFollow(true);
                     UserNote note = userNoteRepository.findByUserIdAndUserNoteId(currentId, userFollow.getUserFollowId());
                     if (current == 2) {
-                        userDataVO.setIsFollow(stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, user.getId().toString()));
+                        // 如果是判断粉丝是否关注,就判断是否互相关注,用户后续展示,如果不是互相关注那么就是该用户没有关注该粉丝
+                        userDataVO.setIsFollow(
+                                        Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, user.getId().toString()))
+                                        &&
+                                        Boolean.TRUE.equals(stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + user.getId(), currentId.toString()))
+                        );
                         note = userNoteRepository.findByUserIdAndUserNoteId(currentId, userFollow.getUserId());
                     }
                     if (note != null) {
