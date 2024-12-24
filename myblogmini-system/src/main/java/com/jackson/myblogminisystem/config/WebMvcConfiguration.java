@@ -28,9 +28,11 @@ public class WebMvcConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         log.info("开始注册自定义拦截器...");
         registry.addInterceptor(jwtTokenUserInterceptor)
-                .addPathPatterns("/api/**","/api/article/doLike") // /api/article/**只拦截 /api/article/doLike
+                .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/user/login",
-                        "/api/article/**"
+                        "/api/article/page", // 匹配获取文章列表接口
+                        "/api/article/{id:\\\\d+}", // 匹配获取文章详情接口
+                        "/api/comment/list"
                 );
     }
 

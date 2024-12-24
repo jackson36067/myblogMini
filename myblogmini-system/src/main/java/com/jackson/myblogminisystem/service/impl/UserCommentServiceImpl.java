@@ -7,6 +7,8 @@ import com.jackson.dao.Article;
 import com.jackson.dao.User;
 import com.jackson.dao.UserComment;
 import com.jackson.dto.SendCommentDTO;
+import com.jackson.exception.NotLoginException;
+import com.jackson.myblogminisystem.annotation.GetLoginUserId;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
 import com.jackson.myblogminisystem.repository.UserCommentRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
@@ -40,6 +42,7 @@ public class UserCommentServiceImpl implements UserCommentService {
      * @param id 文章id
      * @return
      */
+    @GetLoginUserId
     @Override
     public Result<PageResult> getUserComment(Long id, Boolean isAll) {
         PageRequest pageRequest = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "totalLike"));
@@ -61,10 +64,12 @@ public class UserCommentServiceImpl implements UserCommentService {
                     // 判断该用户是否点赞该评论,是否关注发布评论的作者
                     // 获取用户关注信息
                     Long currentId = BaseContext.getCurrentId();
-                    Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, userId.toString());
-                    userCommentVO.setIsFollow(isFollow);
-                    Boolean isLike = stringRedisTemplate.opsForSet().isMember(RedisConstant.COMMENT_LIKE_KEY_PREFIX + userComment.getId(), currentId.toString());
-                    userCommentVO.setIsLike(isLike);
+                    if (currentId != null) {
+                        Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, userId.toString());
+                        userCommentVO.setIsFollow(isFollow);
+                        Boolean isLike = stringRedisTemplate.opsForSet().isMember(RedisConstant.COMMENT_LIKE_KEY_PREFIX + userComment.getId(), currentId.toString());
+                        userCommentVO.setIsLike(isLike);
+                    }
                     return userCommentVO;
                 })
                 .toList();
@@ -82,6 +87,9 @@ public class UserCommentServiceImpl implements UserCommentService {
     public void sendComment(SendCommentDTO sendCommentDTO) {
         // 新增评论
         Long currentId = BaseContext.getCurrentId();
+        if (currentId == null) {
+            throw new NotLoginException();
+        }
         User user = userRepository.findById(currentId).get();
         Article article = articleRepository.findById(sendCommentDTO.getArticleId()).get();
         UserComment userComment = BeanUtil.copyProperties(sendCommentDTO, UserComment.class);
@@ -104,6 +112,9 @@ public class UserCommentServiceImpl implements UserCommentService {
     @Override
     public void doLikeComment(Long id) {
         Long currentId = BaseContext.getCurrentId();
+        if (currentId == null) {
+            throw new NotLoginException();
+        }
         // 判断是否点赞过
         String key = RedisConstant.COMMENT_LIKE_KEY_PREFIX + id;
         UserComment userComment = userCommentRepository.findById(id).get();

@@ -1,12 +1,15 @@
 package com.jackson.myblogminisystem.interceptor;
 
 import com.jackson.constant.JwtConstant;
+import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -14,6 +17,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 @Slf4j
 public class JwtTokenUserInterceptor implements HandlerInterceptor {
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * @param request
@@ -35,7 +41,7 @@ public class JwtTokenUserInterceptor implements HandlerInterceptor {
         //2.校验令牌
         try {
             log.info("jwt校验:{}", token);
-            Claims claims = JwtUtils.parseJWT( token);
+            Claims claims = JwtUtils.parseJWT(token);
             Long userId = Long.valueOf(claims.get(JwtConstant.USER_ID).toString());
             log.info("登录用户的id:{}", userId);
             //使用ThreadLocal对新增员工操作者的id的储存
@@ -43,6 +49,7 @@ public class JwtTokenUserInterceptor implements HandlerInterceptor {
             return true;
         } catch (Exception e) {
             log.info("解析令牌失败");
+            stringRedisTemplate.opsForValue().getAndDelete(RedisConstant.USER_LOGIN_KEY_PREFIX + token);
             response.setStatus(401);
             return false;
         }

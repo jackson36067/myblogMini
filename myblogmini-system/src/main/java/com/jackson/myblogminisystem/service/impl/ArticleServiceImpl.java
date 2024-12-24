@@ -6,6 +6,8 @@ import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
 import com.jackson.dao.User;
 import com.jackson.dao.UserLikeArticle;
+import com.jackson.exception.NotLoginException;
+import com.jackson.myblogminisystem.annotation.GetLoginUserId;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
 import com.jackson.myblogminisystem.repository.UserLikeArticleRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
@@ -36,6 +38,7 @@ public class ArticleServiceImpl implements ArticleService {
     private UserRepository userRepository;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
     @Resource
     private UserLikeArticleRepository userLikeArticleRepository;
 
@@ -48,10 +51,9 @@ public class ArticleServiceImpl implements ArticleService {
      * @param pageSize
      * @return
      */
+    @GetLoginUserId
     @Override
     public Result<PageResult> getArticleWithPaging(String title, Integer sign, Integer page, Integer pageSize) {
-        // 获取用户id
-        Long currentId = BaseContext.getCurrentId();
         Specification<Article> articleSpecification = (root, query, cb) -> {
             ArrayList<Predicate> predicateArrayList = new ArrayList<>();
             if (StringUtils.hasText(title)) {
@@ -70,6 +72,7 @@ public class ArticleServiceImpl implements ArticleService {
         PageResult pageResult = new PageResult(articleRepositoryAll.getTotalElements(), articleRepositoryAll.getTotalPages(), articlePageVOS);
         return Result.success(pageResult);
     }
+
 
     /**
      * 点赞功能
@@ -158,21 +161,24 @@ public class ArticleServiceImpl implements ArticleService {
      * @param id
      * @return
      */
+    @GetLoginUserId
     @Override
     public Result<ArticleVO> getArticleDetail(Long id) {
         Article article = articleRepository.findById(id).get();
         ArticleVO articleVO = BeanUtil.copyProperties(article, ArticleVO.class);
-        Boolean isMember = isLike(id, BaseContext.getCurrentId());
-        articleVO.setIsLike(isMember);
+        Long currentId = BaseContext.getCurrentId();
+        if (currentId != null) {
+            Boolean isMember = isLike(id, currentId);
+            articleVO.setIsLike(isMember);
+            articleVO.setIsFavorite(isFavorite(currentId, id));
+        }
         User user = userRepository.findById(article.getUser().getId()).get();
         articleVO.setAvatar(user.getAvatar());
         articleVO.setNickName(user.getNickName());
-        Long currentId = BaseContext.getCurrentId();
         articleVO.setIsFollow(isFollow(currentId, user.getId()));
         articleVO.setArticleId(id);
         String[] tags = article.getTags().split(",");
         articleVO.setTags(Arrays.stream(tags).toList());
-        articleVO.setIsFavorite(isFavorite(currentId, id));
         // 文章访问数 + 1
         article.setTotalVisit(article.getTotalVisit() + 1);
         articleRepository.saveAndFlush(article);
@@ -228,6 +234,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     /**
      * 判断是否收藏文章
+     *
      * @param userId
      * @param articleId
      * @return
@@ -252,8 +259,10 @@ public class ArticleServiceImpl implements ArticleService {
                     articlePageVO.setTags(Arrays.stream(split).toList());
                     String nickName = userRepository.findNickNameById(article.getUser().getId());
                     articlePageVO.setAuthor(nickName);
-                    Boolean isMember = isLike(article.getId(), currentId);
-                    articlePageVO.setIsLike(isMember);
+                    if (currentId != null) {
+                        Boolean isMember = isLike(article.getId(), currentId);
+                        articlePageVO.setIsLike(isMember);
+                    }
                     return articlePageVO;
                 })
                 .toList();

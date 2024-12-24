@@ -71,6 +71,7 @@ public class UserServiceImpl implements UserService {
         Map<String, Object> claims = new HashMap<>();
         claims.put(JwtConstant.USER_ID, user.getId());
         String token = JwtUtils.createJWT(claims);
+        stringRedisTemplate.opsForValue().set(RedisConstant.USER_LOGIN_KEY_PREFIX + token, user.getId().toString());
         // 返回这个用户对象
         LoginResultVO loginResultVO = BeanUtil.copyProperties(user, LoginResultVO.class);
         loginResultVO.setToken(token);
