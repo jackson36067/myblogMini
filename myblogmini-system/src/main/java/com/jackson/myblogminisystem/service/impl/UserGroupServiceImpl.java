@@ -54,4 +54,12 @@ public class UserGroupServiceImpl implements UserGroupService {
         }).toList();
         return Result.success(userGroupVOList);
     }
+
+    @Override
+    public void addUserGroup(String groupName) {
+        Long currentId = BaseContext.getCurrentId();
+        User user = userRepository.findById(currentId).get();
+        UserGroup userGroup = new UserGroup(null, groupName, user);
+        userGroupRepository.save(userGroup);
+    }
 }

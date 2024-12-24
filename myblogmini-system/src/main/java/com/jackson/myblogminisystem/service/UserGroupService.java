@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface UserGroupService {
     Result<List<UserGroupVO>> getGroupList();
+
+    void addUserGroup(String groupName);
 }

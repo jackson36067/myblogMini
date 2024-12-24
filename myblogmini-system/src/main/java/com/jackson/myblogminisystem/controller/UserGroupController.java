@@ -1,12 +1,11 @@
 package com.jackson.myblogminisystem.controller;
 
+import com.jackson.dto.AddGroupDTO;
 import com.jackson.myblogminisystem.service.UserGroupService;
 import com.jackson.result.Result;
 import com.jackson.vo.UserGroupVO;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,10 +18,19 @@ public class UserGroupController {
 
     /**
      * 获取用户分组接口
+     *
      * @return
      */
     @GetMapping("/list")
     public Result<List<UserGroupVO>> getGroupList() {
         return userGroupService.getGroupList();
+    }
+
+    /**
+     * 创建用户分组
+     */
+    @PostMapping("/add")
+    public void addUserGroup(@RequestBody AddGroupDTO addGroupDTO) {
+        userGroupService.addUserGroup(addGroupDTO.getGroupName());
     }
 }
