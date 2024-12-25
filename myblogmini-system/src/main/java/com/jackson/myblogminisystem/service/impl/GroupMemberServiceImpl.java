@@ -1,5 +1,6 @@
 package com.jackson.myblogminisystem.service.impl;
 
+import com.jackson.context.BaseContext;
 import com.jackson.dao.GroupMember;
 import com.jackson.dao.UserGroup;
 import com.jackson.dto.GroupMemberDTO;
@@ -27,7 +28,9 @@ public class GroupMemberServiceImpl implements GroupMemberService {
         // 通过分组id以及成员id
         Long memberId = groupMemberDTO.getMemberId();
         Long groupId = groupMemberDTO.getId();
-        GroupMember groupMember = groupMemberRepository.findByMemberId(memberId);
+        // 通过成员id以及用户id判断改成员是否已经被该用户分组
+        Long currentId = BaseContext.getCurrentId();
+        GroupMember groupMember = groupMemberRepository.findByMemberId(memberId, currentId);
         UserGroup userGroup = userGroupRepository.findById(groupId).get();
         // 判断该成员是否已经存在与某个分组内
         if (groupMember != null) {
