@@ -11,7 +11,5 @@ public interface GroupMemberService {
 
     void addOrDeleteMemberToGroup(GroupMemberDTO groupMemberDTO);
 
-    Result<List<GroupMemberVO>> getGroupMemberById(Long id);
-
     void removeMemberFromGroup(GroupMemberDTO groupMemberDTO);
 }

@@ -1,5 +1,6 @@
 package com.jackson.myblogminisystem.service;
 
+import com.jackson.dto.UpdateGroupDTO;
 import com.jackson.result.Result;
 import com.jackson.vo.AddGroupMemberInfoVO;
 import com.jackson.vo.UserGroupVO;
@@ -12,4 +13,8 @@ public interface UserGroupService {
     void addUserGroup(String groupName);
 
     Result<List<AddGroupMemberInfoVO>> getAddGroupMemberInfo(Long groupId, String nickNameOrComment);
+
+    void updateGroupName(UpdateGroupDTO updateGroupDTO);
+
+    void deleteGroup(Long id);
 }

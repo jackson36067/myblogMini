@@ -1,6 +1,7 @@
 package com.jackson.myblogminisystem.controller;
 
 import com.jackson.dto.AddGroupDTO;
+import com.jackson.dto.UpdateGroupDTO;
 import com.jackson.myblogminisystem.service.UserGroupService;
 import com.jackson.result.Result;
 import com.jackson.vo.AddGroupMemberInfoVO;
@@ -38,12 +39,32 @@ public class UserGroupController {
 
     /**
      * 获取添加分组成员时能添加的成员数据 (我的关注用户,并判断是否已经存在在这个组内)
+     *
      * @param groupId
      * @param nickNameOrComment
      * @return
      */
     @GetMapping("/add/list")
     public Result<List<AddGroupMemberInfoVO>> getAddGroupMemberInfo(Long groupId, String nickNameOrComment) {
-        return userGroupService.getAddGroupMemberInfo(groupId,nickNameOrComment);
+        return userGroupService.getAddGroupMemberInfo(groupId, nickNameOrComment);
+    }
+
+    /**
+     * 修改用户名称
+     *
+     * @param updateGroupDTO
+     */
+    @PutMapping("/name")
+    public void updateGroupName(@RequestBody UpdateGroupDTO updateGroupDTO) {
+        userGroupService.updateGroupName(updateGroupDTO);
+    }
+
+    /**
+     * 删除用户分组
+     * @param id
+     */
+    @DeleteMapping("/{id}")
+    public void deleteGroup(@PathVariable Long id) {
+        userGroupService.deleteGroup(id);
     }
 }

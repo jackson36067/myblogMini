@@ -4,6 +4,8 @@ import cn.hutool.core.bean.BeanUtil;
 import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.*;
+import com.jackson.dto.UpdateGroupDTO;
+import com.jackson.exception.GroupNameExistException;
 import com.jackson.myblogminisystem.repository.*;
 import com.jackson.myblogminisystem.service.UserGroupService;
 import com.jackson.result.Result;
@@ -118,5 +120,39 @@ public class UserGroupServiceImpl implements UserGroupService {
             return addGroupMemberInfoVO;
         }).toList();
         return Result.success(addGroupMemberInfoVOList);
+    }
+
+    /**
+     * 更新分组名称
+     *
+     * @param updateGroupDTO
+     */
+    @Override
+    public void updateGroupName(UpdateGroupDTO updateGroupDTO) {
+        String groupName = updateGroupDTO.getGroupName();
+        UserGroup userGroup = userGroupRepository.findByGroupName(groupName);
+        if (userGroup != null) {
+            throw new GroupNameExistException("分组名称已经存在,请更换一个名称");
+        }
+        userGroup = userGroupRepository.findById(updateGroupDTO.getId()).get();
+        userGroup.setGroupName(updateGroupDTO.getGroupName());
+        userGroupRepository.saveAndFlush(userGroup);
+    }
+
+    /**
+     * 删除用户分组
+     *
+     * @param id
+     */
+    @Override
+    public void deleteGroup(Long id) {
+        // 删除分组
+        userGroupRepository.deleteById(id);
+        // 删除组内成员
+        List<GroupMember> groupMemberList = groupMemberRepository.findAllByGroupId(id);
+        if (groupMemberList != null && !groupMemberList.isEmpty()){
+            List<Long> groupMemberIdList = groupMemberList.stream().map(GroupMember::getId).toList();
+            groupMemberRepository.deleteAllById(groupMemberIdList);
+        }
     }
 }

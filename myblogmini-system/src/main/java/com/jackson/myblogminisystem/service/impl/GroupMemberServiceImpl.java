@@ -84,30 +84,6 @@ public class GroupMemberServiceImpl implements GroupMemberService {
     }
 
     /**
-     * 根据分组id获取分组成员
-     *
-     * @param id
-     * @return
-     */
-    @Override
-    public Result<List<GroupMemberVO>> getGroupMemberById(Long id) {
-        Long currentId = BaseContext.getCurrentId();
-        List<GroupMember> groupMemberList = groupMemberRepository.findAllByGroupId(id);
-        List<GroupMemberVO> groupMemberVOList = groupMemberList.stream().map(groupMember -> {
-            User user = userRepository.findById(groupMember.getMemberId()).get();
-            GroupMemberVO groupMemberVO = BeanUtil.copyProperties(user, GroupMemberVO.class);
-            Boolean isMember = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, user.getId().toString());
-            groupMemberVO.setIsFollow(isMember);
-            UserNote userNote = userNoteRepository.findByUserIdAndUserNoteId(currentId, user.getId());
-            if (userNote != null) {
-                groupMemberVO.setComment(userNote.getNote());
-            }
-            return groupMemberVO;
-        }).toList();
-        return Result.success(groupMemberVOList);
-    }
-
-    /**
      * 从分组中移除成员
      *
      * @param groupMemberDTO

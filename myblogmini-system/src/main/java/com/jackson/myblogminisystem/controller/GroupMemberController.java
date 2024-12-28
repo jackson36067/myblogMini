@@ -37,16 +37,6 @@ public class GroupMemberController {
     }
 
     /**
-     * 根据分组id获取分组成员
-     * @param id
-     * @return
-     */
-    @GetMapping("/{id}")
-    public Result<List<GroupMemberVO>> getGroupMemberById(@PathVariable Long id) {
-        return groupMemberService.getGroupMemberById(id);
-    }
-
-    /**
      * 从分组中移除成员
      * @param groupMemberDTO
      */
