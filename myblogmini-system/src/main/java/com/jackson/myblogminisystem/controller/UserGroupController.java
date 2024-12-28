@@ -3,6 +3,7 @@ package com.jackson.myblogminisystem.controller;
 import com.jackson.dto.AddGroupDTO;
 import com.jackson.myblogminisystem.service.UserGroupService;
 import com.jackson.result.Result;
+import com.jackson.vo.AddGroupMemberInfoVO;
 import com.jackson.vo.UserGroupVO;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -32,5 +33,17 @@ public class UserGroupController {
     @PostMapping("/add")
     public void addUserGroup(@RequestBody AddGroupDTO addGroupDTO) {
         userGroupService.addUserGroup(addGroupDTO.getGroupName());
+    }
+
+
+    /**
+     * 获取添加分组成员时能添加的成员数据 (我的关注用户,并判断是否已经存在在这个组内)
+     * @param groupId
+     * @param nickNameOrComment
+     * @return
+     */
+    @GetMapping("/add/list")
+    public Result<List<AddGroupMemberInfoVO>> getAddGroupMemberInfo(Long groupId, String nickNameOrComment) {
+        return userGroupService.getAddGroupMemberInfo(groupId,nickNameOrComment);
     }
 }
