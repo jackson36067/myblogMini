@@ -4,10 +4,13 @@ import cn.hutool.core.bean.BeanUtil;
 import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
+import com.jackson.dao.ArticleClassify;
 import com.jackson.dao.User;
 import com.jackson.dao.UserLikeArticle;
+import com.jackson.dto.AddArticleDTO;
 import com.jackson.exception.NotLoginException;
 import com.jackson.myblogminisystem.annotation.GetLoginUserId;
+import com.jackson.myblogminisystem.repository.ArticleClassifyRepository;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
 import com.jackson.myblogminisystem.repository.UserLikeArticleRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
@@ -16,6 +19,7 @@ import com.jackson.result.PageResult;
 import com.jackson.result.Result;
 import com.jackson.vo.ArticlePageVO;
 import com.jackson.vo.ArticleVO;
+import io.netty.util.internal.StringUtil;
 import jakarta.annotation.Resource;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -26,6 +30,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,9 +43,10 @@ public class ArticleServiceImpl implements ArticleService {
     private UserRepository userRepository;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
-
     @Resource
     private UserLikeArticleRepository userLikeArticleRepository;
+    @Resource
+    private ArticleClassifyRepository articleClassifyRepository;
 
     /**
      * 分页获取文章
@@ -208,6 +214,30 @@ public class ArticleServiceImpl implements ArticleService {
             article.setTotalCollect(article.getTotalCollect() + 1);
         }
         articleRepository.saveAndFlush(article);
+    }
+
+    /**
+     * 新增文章接口
+     *
+     * @param addArticleDTO
+     */
+    @Override
+    public void addArticle(AddArticleDTO addArticleDTO) {
+        Article article = BeanUtil.copyProperties(addArticleDTO, Article.class);
+        Long currentId = BaseContext.getCurrentId();
+        User user = userRepository.findById(currentId).get();
+        String tags = StringUtil.join(",", addArticleDTO.getTags()).toString();
+        ArticleClassify articleClassify = articleClassifyRepository.findByType(addArticleDTO.getType());
+        article.setUser(user);
+        article.setTags(tags);
+        article.setCreateTime(LocalDateTime.now());
+        article.setUpdateTime(LocalDateTime.now());
+        article.setTotalComment(0);
+        article.setTotalCollect(0);
+        article.setTotalLike(0);
+        article.setTotalVisit(0);
+        article.setArticleClassify(articleClassify);
+        articleRepository.save(article);
     }
 
     /**

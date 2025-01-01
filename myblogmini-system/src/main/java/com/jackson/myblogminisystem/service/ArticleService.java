@@ -1,5 +1,6 @@
 package com.jackson.myblogminisystem.service;
 
+import com.jackson.dto.AddArticleDTO;
 import com.jackson.result.PageResult;
 import com.jackson.result.Result;
 import com.jackson.vo.ArticlePageVO;
@@ -19,4 +20,6 @@ public interface ArticleService {
     Result<ArticleVO> getArticleDetail(Long id);
 
     void doFavoriteArticle(Long id);
+
+    void addArticle(AddArticleDTO addArticleDTO);
 }

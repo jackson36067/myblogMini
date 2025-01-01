@@ -1,5 +1,6 @@
 package com.jackson.myblogminisystem.controller;
 
+import com.jackson.dto.AddArticleDTO;
 import com.jackson.dto.ArticleLikeDTO;
 import com.jackson.myblogminisystem.service.ArticleService;
 import com.jackson.result.PageResult;
@@ -78,10 +79,16 @@ public class ArticleController {
 
     /**
      * 收藏文章接口
+     *
      * @param id
      */
     @PostMapping("/favorite/{id}")
     public void doFavoriteArticle(@PathVariable Long id) {
         articleService.doFavoriteArticle(id);
+    }
+
+    @PostMapping("/add")
+    public void addArticle(@RequestBody AddArticleDTO addArticleDTO) {
+        articleService.addArticle(addArticleDTO);
     }
 }
