@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ArticleServiceImpl implements ArticleService {
@@ -125,6 +126,29 @@ public class ArticleServiceImpl implements ArticleService {
                 .stream()
                 .map(userLikeArticle -> {
                     return articleRepository.findById(userLikeArticle.getArticleId()).get();
+                })
+                .toList();
+        if (StringUtils.hasText(title)) {
+            articleList = articleList.stream().filter(article -> article.getTitle().contains(title)).toList();
+        }
+        List<ArticlePageVO> articlePageVOS = getResult(articleList);
+        return Result.success(articlePageVOS);
+    }
+
+    /**
+     * 获取当前用户所有的收藏文章
+     * @param title
+     * @return
+     */
+    public Result<List<ArticlePageVO>> getMyCollectArticle(String title) {
+        Long currentId = BaseContext.getCurrentId();
+        // 获取当前用户所有收藏文章的id
+        Set<String> members = stringRedisTemplate.opsForSet().members(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + currentId);
+        List<Article> articleList;
+        articleList = members
+                .stream()
+                .map(member -> {
+                    return articleRepository.findById(Long.valueOf(member)).get();
                 })
                 .toList();
         if (StringUtils.hasText(title)) {

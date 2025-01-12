@@ -55,6 +55,16 @@ public class ArticleController {
     }
 
     /**
+     * 获取当前用户所有的收藏文章
+     * @param title
+     * @return
+     */
+    @GetMapping("/favorite")
+    public Result<List<ArticlePageVO>> getTotalCollectArticle(String title) {
+        return articleService.getMyCollectArticle(title);
+    }
+
+    /**
      * 获取用户文章
      *
      * @param type  0:已展示 1:为展示
@@ -87,6 +97,11 @@ public class ArticleController {
         articleService.doFavoriteArticle(id);
     }
 
+    /**
+     * 新增文章
+     *
+     * @param addArticleDTO
+     */
     @PostMapping("/add")
     public void addArticle(@RequestBody AddArticleDTO addArticleDTO) {
         articleService.addArticle(addArticleDTO);
