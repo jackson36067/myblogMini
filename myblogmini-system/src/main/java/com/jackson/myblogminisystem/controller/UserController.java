@@ -5,6 +5,7 @@ import com.jackson.dto.UserLoginDTO;
 import com.jackson.myblogminisystem.service.UserService;
 import com.jackson.result.Result;
 import com.jackson.vo.LoginResultVO;
+import com.jackson.vo.UserDataVO;
 import com.jackson.vo.UserResult;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -51,5 +52,10 @@ public class UserController {
     @PutMapping("/update")
     public void updateUserInfo(@RequestBody UpdateUserDTO updateUserDTO) {
         userService.updateUserInfo(updateUserDTO);
+    }
+
+    @GetMapping("/{id}")
+    public Result<UserDataVO> getUserDetailData(@PathVariable Long id){
+        return userService.getUserDetailData(id);
     }
 }

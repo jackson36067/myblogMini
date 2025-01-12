@@ -8,10 +8,12 @@ import com.jackson.context.BaseContext;
 import com.jackson.dao.Article;
 import com.jackson.dao.User;
 import com.jackson.dao.UserFollow;
+import com.jackson.dao.UserNote;
 import com.jackson.dto.UpdateUserDTO;
 import com.jackson.dto.UserLoginDTO;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
 import com.jackson.myblogminisystem.repository.UserFollowRepository;
+import com.jackson.myblogminisystem.repository.UserNoteRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
 import com.jackson.myblogminisystem.service.UserService;
 import com.jackson.properties.WeChatProperties;
@@ -20,6 +22,7 @@ import com.jackson.utils.AliOssUtils;
 import com.jackson.utils.HttpClientUtils;
 import com.jackson.utils.JwtUtils;
 import com.jackson.vo.LoginResultVO;
+import com.jackson.vo.UserDataVO;
 import com.jackson.vo.UserResult;
 import jakarta.annotation.Resource;
 import com.alibaba.fastjson.JSON;
@@ -50,6 +53,8 @@ public class UserServiceImpl implements UserService {
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private ArticleRepository articleRepository;
+    @Resource
+    private UserNoteRepository userNoteRepository;
 
     /**
      * 用户登录
@@ -156,6 +161,28 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 获取用户详情
+     *
+     * @param id
+     * @return
+     */
+    public Result<UserDataVO> getUserDetailData(Long id) {
+        // 获取当前用户id
+        Long currentId = BaseContext.getCurrentId();
+        User user = userRepository.findById(id).get();
+        UserDataVO userDataVO = BeanUtil.copyProperties(user, UserDataVO.class);
+        // 获取当前用户是否关注该用户
+        Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, id.toString());
+        userDataVO.setIsFollow(isFollow);
+        // 获取当前用户对该用户的备注,可以没有
+        UserNote userNote = userNoteRepository.findByUserIdAndUserNoteId(currentId, id);
+        if (userNote != null) {
+            userDataVO.setComment(userNote.getNote());
+        }
+        return Result.success(userDataVO);
+    }
+
+    /**
      * 调用微信接口服务,获取当前用户的openid
      *
      * @param code
@@ -163,7 +190,7 @@ public class UserServiceImpl implements UserService {
      */
     private String getOpenid(String code) {
         // 通过HttpClient发送请求给auth.code2Session接口获取openid
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("appid", weChatProperties.getAppid());
         params.put("secret", weChatProperties.getSecret());
         params.put("grant_type", "authorization_code");
