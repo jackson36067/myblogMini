@@ -23,6 +23,7 @@ import com.jackson.utils.HttpClientUtils;
 import com.jackson.utils.JwtUtils;
 import com.jackson.vo.LoginResultVO;
 import com.jackson.vo.UserDataVO;
+import com.jackson.vo.UserDetailVO;
 import com.jackson.vo.UserResult;
 import jakarta.annotation.Resource;
 import com.alibaba.fastjson.JSON;
@@ -35,6 +36,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -166,20 +168,44 @@ public class UserServiceImpl implements UserService {
      * @param id
      * @return
      */
-    public Result<UserDataVO> getUserDetailData(Long id) {
+    public Result<UserDetailVO> getUserDetailData(Long id) {
         // 获取当前用户id
         Long currentId = BaseContext.getCurrentId();
         User user = userRepository.findById(id).get();
-        UserDataVO userDataVO = BeanUtil.copyProperties(user, UserDataVO.class);
+        UserDetailVO userDetailVO = BeanUtil.copyProperties(user, UserDetailVO.class);
         // 获取当前用户是否关注该用户
         Boolean isFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + currentId, id.toString());
-        userDataVO.setIsFollow(isFollow);
+        userDetailVO.setIsFollow(isFollow);
+        // 判断是否互相关注
+        if (Boolean.FALSE.equals(isFollow)) {
+            userDetailVO.setIsMutualAttention(false);
+        } else {
+            // 判断该获取是否关注当前用户
+            Boolean backFollow = stringRedisTemplate.opsForSet().isMember(RedisConstant.USER_FOLLOW_KEY_PREFIX + id, currentId.toString());
+            userDetailVO.setIsMutualAttention(backFollow);
+        }
+        // 获取该用户总共的点赞数以及粉丝以及关注
+
+        // 总关注数
+        Set<String> members = stringRedisTemplate.opsForSet().members(RedisConstant.USER_FOLLOW_KEY_PREFIX + id);
+        userDetailVO.setTotalFollow(members != null ? members.size() : 0);
+
+        // 总点赞数
+        int totalLike = 0;
+        List<Article> articleList = articleRepository.findAllByUserId(id);
+        totalLike = articleList.stream().mapToInt(Article::getTotalLike).sum();
+        userDetailVO.setTotalLike(totalLike);
+
+        // 总粉丝数
+        List<UserFollow> userFollowList = userFollowRepository.findAllByUserFollowId(id);
+        userDetailVO.setTotalFans(userFollowList != null ? userFollowList.size() : 0);
+
         // 获取当前用户对该用户的备注,可以没有
         UserNote userNote = userNoteRepository.findByUserIdAndUserNoteId(currentId, id);
         if (userNote != null) {
-            userDataVO.setComment(userNote.getNote());
+            userDetailVO.setComment(userNote.getNote());
         }
-        return Result.success(userDataVO);
+        return Result.success(userDetailVO);
     }
 
     /**
