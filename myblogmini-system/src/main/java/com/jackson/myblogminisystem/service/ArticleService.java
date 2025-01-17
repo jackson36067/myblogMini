@@ -24,4 +24,6 @@ public interface ArticleService {
     void doFavoriteArticle(Long id);
 
     void addArticle(AddArticleDTO addArticleDTO);
+
+    Result<List<ArticlePageVO>> getUserDetailArticle(Long id, Integer current);
 }

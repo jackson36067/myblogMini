@@ -8,7 +8,6 @@ import com.jackson.dao.ArticleClassify;
 import com.jackson.dao.User;
 import com.jackson.dao.UserLikeArticle;
 import com.jackson.dto.AddArticleDTO;
-import com.jackson.exception.NotLoginException;
 import com.jackson.myblogminisystem.annotation.GetLoginUserId;
 import com.jackson.myblogminisystem.repository.ArticleClassifyRepository;
 import com.jackson.myblogminisystem.repository.ArticleRepository;
@@ -137,6 +136,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     /**
      * 获取当前用户所有的收藏文章
+     *
      * @param title
      * @return
      */
@@ -144,15 +144,17 @@ public class ArticleServiceImpl implements ArticleService {
         Long currentId = BaseContext.getCurrentId();
         // 获取当前用户所有收藏文章的id
         Set<String> members = stringRedisTemplate.opsForSet().members(RedisConstant.ARTICLE_FAVORITE_KEY_PREFIX + currentId);
-        List<Article> articleList;
-        articleList = members
-                .stream()
-                .map(member -> {
-                    return articleRepository.findById(Long.valueOf(member)).get();
-                })
-                .toList();
-        if (StringUtils.hasText(title)) {
-            articleList = articleList.stream().filter(article -> article.getTitle().contains(title)).toList();
+        List<Article> articleList = List.of();
+        if (members != null && !members.isEmpty()) {
+            articleList = members
+                    .stream()
+                    .map(member -> {
+                        return articleRepository.findById(Long.valueOf(member)).get();
+                    })
+                    .toList();
+            if (StringUtils.hasText(title)) {
+                articleList = articleList.stream().filter(article -> article.getTitle().contains(title)).toList();
+            }
         }
         List<ArticlePageVO> articlePageVOS = getResult(articleList);
         return Result.success(articlePageVOS);
@@ -262,6 +264,30 @@ public class ArticleServiceImpl implements ArticleService {
         article.setTotalVisit(0);
         article.setArticleClassify(articleClassify);
         articleRepository.save(article);
+    }
+
+    /**
+     * 获取用户文章详情
+     *
+     * @param id      用户id
+     * @param current 0 用户自己的文章 1. 用户点赞的文章
+     * @return
+     */
+    @Override
+    public Result<List<ArticlePageVO>> getUserDetailArticle(Long id, Integer current) {
+        List<Article> articleList = List.of();
+        if (current == 0) {
+            articleList = articleRepository.findAllByUserId(id);
+        } else if (current == 1) {
+            articleList = userLikeArticleRepository.findAllByUserId(id)
+                    .stream()
+                    .map(userLikeArticle ->
+                            articleRepository.findById(userLikeArticle.getArticleId()).get()
+                    )
+                    .toList();
+        }
+        List<ArticlePageVO> articlePageVOList = getResult(articleList);
+        return Result.success(articlePageVOList);
     }
 
     /**

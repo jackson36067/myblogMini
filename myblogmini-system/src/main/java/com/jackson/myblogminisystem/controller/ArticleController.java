@@ -56,6 +56,7 @@ public class ArticleController {
 
     /**
      * 获取当前用户所有的收藏文章
+     *
      * @param title
      * @return
      */
@@ -105,5 +106,16 @@ public class ArticleController {
     @PostMapping("/add")
     public void addArticle(@RequestBody AddArticleDTO addArticleDTO) {
         articleService.addArticle(addArticleDTO);
+    }
+
+    /**
+     * 获取用户文章详情 current:0 用户自己的文章 1. 用户点赞的文章
+     * @param id
+     * @param current
+     * @return
+     */
+    @GetMapping("/detail/{id}")
+    public Result<List<ArticlePageVO>> getUserDetailArticle(@PathVariable Long id, Integer current) {
+        return articleService.getUserDetailArticle(id,current);
     }
 }
