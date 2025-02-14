@@ -48,10 +48,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             // 接收信息用户id -> 参数
             // 获取双方的聊天记录
             List<ChatMessage> chatMessageList = chatMessageRepository.findAllBySenderIdAndReceiverId(currentId, id);
-            User user = userRepository.findById(id).get();
-            ChatMessageVO chatMessageVO = BeanUtil.copyProperties(user, ChatMessageVO.class);
-            chatMessageVO.setLastOnlineTime(TimeFormatterUtils.formatLastOnline(user.getLastOnlineTime()));
-            chatMessageVO.setChatMessages(chatMessageList);
             // 从redis中删除未读信息
             Set<String> unReadMessageRange = stringRedisTemplate.opsForZSet().range(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, 0, -1);
             if (unReadMessageRange != null && !unReadMessageRange.isEmpty()) {
@@ -59,11 +55,21 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                     ChatMessage chatMessage = JSONUtil.toBean(range, ChatMessage.class);
                     return Objects.equals(chatMessage.getSenderId(), id);
                 }).toList();
-                // 删除对方未读信息
                 if (!list.isEmpty()) {
+                    // 删除对方未读信息
                     stringRedisTemplate.opsForZSet().remove(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, list.toArray());
+                    // 异步将信息插入到数据库中
+                    List<ChatMessage> chatMessageList1 = list.stream()
+                            .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessage.class))
+                            .toList();
+                    rabbitTemplate.convertAndSend(RabbitMQConstant.CHAT_QUEUE, chatMessageList1);
+                    chatMessageList.addAll(chatMessageList1);
                 }
             }
+            User user = userRepository.findById(id).get();
+            ChatMessageVO chatMessageVO = BeanUtil.copyProperties(user, ChatMessageVO.class);
+            chatMessageVO.setLastOnlineTime(TimeFormatterUtils.formatLastOnline(user.getLastOnlineTime()));
+            chatMessageVO.setChatMessages(chatMessageList);
             // 异步将对方发送的消息设置为已读
             Map<String, Long> rabbitMQChatMap = new HashMap<>();
             rabbitMQChatMap.put(RabbitMQConstant.SENDER_ID, id);
@@ -86,16 +92,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         Set<String> unReadMessageJsonList = stringRedisTemplate.opsForZSet().range(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, 0, -1);
         List<UnReadMessageVO> unReadMessageVOList = List.of();
         if (unReadMessageJsonList != null) {
-            // 异步将信息插入到数据库中
-            //
-            List<ChatMessage> chatMessageList = unReadMessageJsonList.stream()
-                    .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessage.class))
-                    .toList();
-            rabbitTemplate.convertAndSend(RabbitMQConstant.CHAT_QUEUE, chatMessageList);
-//            unReadMessageJsonList.forEach(unReadMessageJson -> {
-//                ChatMessage chatMessage = JSONUtil.toBean(unReadMessageJson, ChatMessage.class);
-//                chatMessageRepository.save(chatMessage);
-//            });
             // 获取未读信息,根据发送者id分组
             Map<Long, List<ChatMessage>> senderMessageGroup = unReadMessageJsonList.stream()
                     .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessage.class))
