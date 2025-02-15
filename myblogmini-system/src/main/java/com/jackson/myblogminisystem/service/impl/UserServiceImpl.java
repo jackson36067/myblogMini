@@ -205,7 +205,33 @@ public class UserServiceImpl implements UserService {
         if (userNote != null) {
             userDetailVO.setComment(userNote.getNote());
         }
+        // 缓存用户访问历史记录
+        // TODO 异步实现保存效果
+        stringRedisTemplate.opsForZSet().add(RedisConstant.USER_BROWSE_HISTORY_PREFIX + currentId, id.toString(), System.currentTimeMillis());
         return Result.success(userDetailVO);
+    }
+
+    /**
+     * 获取用户访问他人主页历史记录详情
+     *
+     * @return
+     */
+    @Override
+    public Result<List<UserDataVO>> getUserHistoryBrowse() {
+        Long currentId = BaseContext.getCurrentId();
+        Set<String> userBrowseHistoryIdStrSet = stringRedisTemplate.opsForZSet().reverseRange(RedisConstant.USER_BROWSE_HISTORY_PREFIX + currentId, 0, -1);
+        List<UserDataVO> userDataVOList = userBrowseHistoryIdStrSet.stream().map((userBrowseHistoryIdStr) -> {
+            Long id = Long.valueOf(userBrowseHistoryIdStr);
+            User user = userRepository.findById(id).get();
+            UserDataVO userDataVO = BeanUtil.copyProperties(user, UserDataVO.class);
+            // 获取当前用户对该用户的备注,可以没有
+            UserNote userNote = userNoteRepository.findByUserIdAndUserNoteId(currentId, id);
+            if(userNote != null){
+                userDataVO.setComment(userNote.getNote());
+            }
+            return userDataVO;
+        }).toList();
+        return Result.success(userDataVOList);
     }
 
     /**

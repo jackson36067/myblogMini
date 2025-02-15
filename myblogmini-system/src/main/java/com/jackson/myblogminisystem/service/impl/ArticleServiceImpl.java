@@ -214,6 +214,8 @@ public class ArticleServiceImpl implements ArticleService {
         // 文章访问数 + 1
         article.setTotalVisit(article.getTotalVisit() + 1);
         articleRepository.saveAndFlush(article);
+        // 将文章阅读记录保存 -> 使用zSet,方便按时间获取
+        stringRedisTemplate.opsForZSet().add(RedisConstant.ARTICLE_BROWSE_HISTORY_PREFIX + currentId, id.toString(), System.currentTimeMillis());
         return Result.success(articleVO);
     }
 
@@ -287,6 +289,23 @@ public class ArticleServiceImpl implements ArticleService {
                     .toList();
         }
         List<ArticlePageVO> articlePageVOList = getResult(articleList);
+        return Result.success(articlePageVOList);
+    }
+
+    /**
+     * 获取用户访问文章历史记录详情
+     *
+     * @return
+     */
+    @Override
+    public Result<List<ArticlePageVO>> getArticleBrowseHistory() {
+        // 获取用户浏览记录历史
+        Long currentId = BaseContext.getCurrentId();
+        // 按照时间先后顺序获取浏览记录
+        Set<String> historyBrowseArticleIdStrSet = stringRedisTemplate.opsForZSet().reverseRange(RedisConstant.ARTICLE_BROWSE_HISTORY_PREFIX + currentId, 0, -1);
+        List<Long> historyBrowseArticleIdList = historyBrowseArticleIdStrSet.stream().map(Long::valueOf).toList();
+        List<Article> historyBrowseArticleList = articleRepository.findAllById(historyBrowseArticleIdList);
+        List<ArticlePageVO> articlePageVOList = getResult(historyBrowseArticleList);
         return Result.success(articlePageVOList);
     }
 

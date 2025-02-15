@@ -110,12 +110,22 @@ public class ArticleController {
 
     /**
      * 获取用户文章详情 current:0 用户自己的文章 1. 用户点赞的文章
+     *
      * @param id
      * @param current
      * @return
      */
     @GetMapping("/detail/{id}")
     public Result<List<ArticlePageVO>> getUserDetailArticle(@PathVariable Long id, Integer current) {
-        return articleService.getUserDetailArticle(id,current);
+        return articleService.getUserDetailArticle(id, current);
+    }
+
+    /**
+     * 获取用户访问文章历史记录详情
+     * @return
+     */
+    @GetMapping("/history")
+    public Result<List<ArticlePageVO>> getArticleBrowseHistory() {
+return articleService.getArticleBrowseHistory();
     }
 }

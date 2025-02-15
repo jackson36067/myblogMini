@@ -12,6 +12,8 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -29,6 +31,10 @@ public class UserController {
         return userService.login(userLoginDTO);
     }
 
+    /**
+     * 获取本身详情信息
+     * @return
+     */
     @GetMapping("/info")
     public Result<UserResult> getUserInfo() {
         return userService.getUserInfo();
@@ -55,8 +61,22 @@ public class UserController {
         userService.updateUserInfo(updateUserDTO);
     }
 
+    /**
+     * 根据id获取用户详情信息
+     * @param id
+     * @return
+     */
     @GetMapping("/{id}")
     public Result<UserDetailVO> getUserDetailData(@PathVariable Long id){
         return userService.getUserDetailData(id);
+    }
+
+    /**
+     * 获取用户访问他人主页历史记录详情
+     * @return
+     */
+    @GetMapping("/history")
+    public Result<List<UserDataVO>> getUserHistoryBrowse(){
+        return userService.getUserHistoryBrowse();
     }
 }

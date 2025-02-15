@@ -3,14 +3,14 @@ package com.jackson.vo;
 import java.util.Objects;
 
 public class UserDataVO {
-    private Long id;
-    private String avatar;
-    private String nickName;
-    private String comment;
-    private Boolean isFollow;
+        private Long id;
+        private String avatar;
+        private String nickName;
+        private String comment; // 备注
+        private Boolean isFollow;
 
     public UserDataVO() {
-    }
+        }
 
     public UserDataVO(Long id, String avatar, String nickName, String comment,Boolean isFollow) {
         this.id = id;
