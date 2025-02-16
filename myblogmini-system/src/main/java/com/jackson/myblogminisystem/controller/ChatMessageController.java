@@ -3,6 +3,7 @@ package com.jackson.myblogminisystem.controller;
 import com.jackson.vo.ChatMessageVO;
 import com.jackson.myblogminisystem.service.ChatMessageService;
 import com.jackson.result.Result;
+import com.jackson.vo.TotalUnReadMessageVO;
 import com.jackson.vo.UnReadMessageVO;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +37,7 @@ public class ChatMessageController {
      * @return
      */
     @GetMapping("/unread")
-    public Result<List<UnReadMessageVO>> getUnReadMessageList() {
+    public Result<TotalUnReadMessageVO> getUnReadMessageList() {
         return chatMessageService.getUnReadMessageList();
     }
 }

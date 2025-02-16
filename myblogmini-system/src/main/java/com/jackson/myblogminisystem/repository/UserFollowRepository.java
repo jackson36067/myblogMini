@@ -18,4 +18,7 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
     List<UserFollow> findAllByUserIdOOrderByCreateTimeAsc(Long userId);
 
     UserFollow findByUserIdAndUserFollowId(Long userId, Long userFollowId);
+
+    @Query("select u from UserFollow u where u.userFollowId = :userFollowId order by u.createTime desc")
+    List<UserFollow> findAllByUserFollowIdAndOrderByCreateTimeAsc(Long userFollowId);
 }

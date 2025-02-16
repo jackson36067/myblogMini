@@ -10,4 +10,5 @@ public class RedisConstant {
     public static final String USER_CHAT_MESSAGE_PREFIX = "chat:message:";
     public static final String ARTICLE_BROWSE_HISTORY_PREFIX = "article:browse:history:";
     public static final String USER_BROWSE_HISTORY_PREFIX = "user:browse:history:";
+    public static final String USER_FOLLOW_MESSAGE_PREFIX = "follow:message:";
 }

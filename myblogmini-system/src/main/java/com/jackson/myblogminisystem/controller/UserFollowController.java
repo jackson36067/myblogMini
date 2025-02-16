@@ -1,11 +1,12 @@
 package com.jackson.myblogminisystem.controller;
 
 import com.jackson.myblogminisystem.service.UserFollowService;
+import com.jackson.result.Result;
+import com.jackson.vo.UserFollowListVO;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/follow")
@@ -16,10 +17,16 @@ public class UserFollowController {
 
     /**
      * 关注用户
+     *
      * @param id 被关注用户id
      */
     @PostMapping("/{id}")
     public void followUser(@PathVariable Long id) {
         userFollowService.followUser(id);
+    }
+
+    @GetMapping("/list")
+    public Result<List<UserFollowListVO>> getUserFollowList() {
+        return userFollowService.getUserFollowList();
     }
 }

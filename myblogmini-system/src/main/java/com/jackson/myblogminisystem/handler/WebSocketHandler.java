@@ -29,8 +29,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
     @Resource
     private UserRepository userRepository;
     @Resource
-    private RabbitTemplate rabbitTemplate;
-    @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private ChatMessageRepository chatMessageRepository;
@@ -55,19 +53,12 @@ public class WebSocketHandler extends TextWebSocketHandler {
         // 发送消息为Json格式
         ChatMessage chatMessage = JSONUtil.toBean(message.getPayload(), ChatMessage.class);
         chatMessage.setCreateTime(LocalDateTime.now());
-        WebSocketSession receiverSession = onlineUsers.get(chatMessage.getReceiverId().toString());
         // 用户在线 -> 通过session发送信息给指定用户
-        if (receiverSession != null && receiverSession.isOpen()) {
-            ChatMessageDTO chatMessageDTO = BeanUtil.copyProperties(chatMessage, ChatMessageDTO.class);
-            User receiver = userRepository.findById(chatMessage.getReceiverId()).get();
-            chatMessageDTO.setAvatar(receiver.getAvatar());
-            chatMessageDTO.setNickName(receiver.getNickName());
-            receiverSession.sendMessage(new TextMessage(objectMapper.writeValueAsString(chatMessageDTO)));
-        } else {
-            // 用户不在线 -> 将消息保存到redis
-            String jsonStr = JSONUtil.toJsonStr(chatMessage);
-            stringRedisTemplate.opsForZSet().add(RedisConstant.USER_CHAT_MESSAGE_PREFIX + chatMessage.getReceiverId(), jsonStr, System.currentTimeMillis());
-        }
+        ChatMessageDTO chatMessageDTO = BeanUtil.copyProperties(chatMessage, ChatMessageDTO.class);
+        User receiver = userRepository.findById(chatMessage.getReceiverId()).get();
+        chatMessageDTO.setAvatar(receiver.getAvatar());
+        chatMessageDTO.setNickName(receiver.getNickName());
+        sendNotification(chatMessage.getReceiverId(), JSONUtil.toJsonStr(chatMessageDTO), 0);
         // 保存到数据库
         chatMessageRepository.save(chatMessage);
     }
@@ -85,5 +76,24 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     private String getUserIdFromSession(WebSocketSession session) {
         return Objects.requireNonNull(session.getUri()).getQuery().split("=")[1]; // 解析 ?userId=123
+    }
+
+    /**
+     * @param id      接受者id
+     * @param message 信息
+     * @param type    0-聊天信息 1-关注信息 2-主页信息,评论点赞信息
+     * @throws Exception
+     */
+    public void sendNotification(Long id, String message, Integer type) throws Exception {
+        WebSocketSession session = onlineUsers.get(id.toString());
+        if (session != null && session.isOpen()) {
+            session.sendMessage(new TextMessage(message));
+        }
+        // 无论有没有在线,都将信息保存到redis中
+        if (type == 0) {
+            stringRedisTemplate.opsForZSet().add(RedisConstant.USER_CHAT_MESSAGE_PREFIX + id, message, System.currentTimeMillis());
+        } else if (type == 1) {
+            stringRedisTemplate.opsForZSet().add(RedisConstant.USER_FOLLOW_MESSAGE_PREFIX + id, message, System.currentTimeMillis());
+        }
     }
 }

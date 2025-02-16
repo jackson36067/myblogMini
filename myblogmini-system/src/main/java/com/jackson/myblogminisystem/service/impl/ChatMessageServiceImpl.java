@@ -7,12 +7,14 @@ import com.jackson.constant.RedisConstant;
 import com.jackson.context.BaseContext;
 import com.jackson.dao.ChatMessage;
 import com.jackson.dao.User;
+import com.jackson.dto.ChatMessageDTO;
 import com.jackson.vo.ChatMessageVO;
 import com.jackson.myblogminisystem.repository.ChatMessageRepository;
 import com.jackson.myblogminisystem.repository.UserRepository;
 import com.jackson.myblogminisystem.service.ChatMessageService;
 import com.jackson.result.Result;
 import com.jackson.utils.TimeFormatterUtils;
+import com.jackson.vo.TotalUnReadMessageVO;
 import com.jackson.vo.UnReadMessageVO;
 import jakarta.annotation.Resource;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -52,15 +54,18 @@ public class ChatMessageServiceImpl implements ChatMessageService {
             Set<String> unReadMessageRange = stringRedisTemplate.opsForZSet().range(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, 0, -1);
             if (unReadMessageRange != null && !unReadMessageRange.isEmpty()) {
                 List<String> list = unReadMessageRange.stream().filter(range -> {
-                    ChatMessage chatMessage = JSONUtil.toBean(range, ChatMessage.class);
-                    return Objects.equals(chatMessage.getSenderId(), id);
+                    ChatMessageDTO chatMessageDTO = JSONUtil.toBean(range, ChatMessageDTO.class);
+                    return Objects.equals(chatMessageDTO.getSenderId(), id);
                 }).toList();
                 if (!list.isEmpty()) {
                     // 删除对方未读信息
                     stringRedisTemplate.opsForZSet().remove(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, list.toArray());
                     // 异步将信息插入到数据库中
                     List<ChatMessage> chatMessageList1 = list.stream()
-                            .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessage.class))
+                            .map(unReadMessageJson -> {
+                                ChatMessageDTO chatMessageDTO = JSONUtil.toBean(unReadMessageJson, ChatMessageDTO.class);
+                                return BeanUtil.copyProperties(chatMessageDTO, ChatMessage.class);
+                            })
                             .toList();
                     rabbitTemplate.convertAndSend(RabbitMQConstant.CHAT_QUEUE, chatMessageList1);
                     chatMessageList.addAll(chatMessageList1);
@@ -87,16 +92,16 @@ public class ChatMessageServiceImpl implements ChatMessageService {
      * @return
      */
     @Override
-    public Result<List<UnReadMessageVO>> getUnReadMessageList() {
+    public Result<TotalUnReadMessageVO> getUnReadMessageList() {
         Long currentId = BaseContext.getCurrentId();
         Set<String> unReadMessageJsonList = stringRedisTemplate.opsForZSet().range(RedisConstant.USER_CHAT_MESSAGE_PREFIX + currentId, 0, -1);
         List<UnReadMessageVO> unReadMessageVOList = List.of();
         if (unReadMessageJsonList != null) {
             // 获取未读信息,根据发送者id分组
-            Map<Long, List<ChatMessage>> senderMessageGroup = unReadMessageJsonList.stream()
-                    .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessage.class))
+            Map<Long, List<ChatMessageDTO>> senderMessageGroup = unReadMessageJsonList.stream()
+                    .map(unReadMessageJson -> JSONUtil.toBean(unReadMessageJson, ChatMessageDTO.class))
                     // 通过发送者的id分组
-                    .collect(Collectors.groupingBy(ChatMessage::getSenderId));
+                    .collect(Collectors.groupingBy(ChatMessageDTO::getSenderId));
             // 从数据中获取我的聊天记录 -> 哪些人
             // 我作为接受者 -> 作为最终结果
             List<Long> senderIdList = chatMessageRepository.findSenderIdByReceiverId(currentId);
@@ -125,15 +130,19 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                         UnReadMessageVO unReadMessageVO = BeanUtil.copyProperties(user, UnReadMessageVO.class);
                         unReadMessageVO.setSenderId(senderId);
                         unReadMessageVO.setLastOnlineTime(TimeFormatterUtils.formatLastOnline(user.getLastOnlineTime()));
-                        List<ChatMessage> chatMessages = senderMessageGroup.get(senderId);
-                        if (chatMessages != null && !chatMessages.isEmpty()) {
-                            unReadMessageVO.setUnReadMessageNumber(chatMessages.size());
+                        List<ChatMessageDTO> chatMessageDTOList = senderMessageGroup.get(senderId);
+                        if (chatMessageDTOList != null && !chatMessageDTOList.isEmpty()) {
+                            unReadMessageVO.setUnReadMessageNumber(chatMessageDTOList.size());
                         } else {
                             unReadMessageVO.setUnReadMessageNumber(0);
                         }
                         return unReadMessageVO;
                     }).toList();
         }
-        return Result.success(unReadMessageVOList);
+        TotalUnReadMessageVO totalUnReadMessageVO = new TotalUnReadMessageVO();
+        Set<String> range = stringRedisTemplate.opsForZSet().range(RedisConstant.USER_FOLLOW_MESSAGE_PREFIX + currentId, 0, -1);
+        totalUnReadMessageVO.setTotalUnReadFollowMessageNumber(range == null ? 0 : range.size());
+        totalUnReadMessageVO.setUnReadMessageVOList(unReadMessageVOList);
+        return Result.success(totalUnReadMessageVO);
     }
 }
